@@ -23,7 +23,7 @@ async function main(): Promise<void> {
     throw new Error("Missing --input <diagnostics.json>");
   }
 
-  const diagnostics = JSON.parse(await readFile(args.input, "utf8")) as OutlookDiagnostics;
+  const diagnostics = JSON.parse(stripByteOrderMark(await readFile(args.input, "utf8"))) as OutlookDiagnostics;
   const findings = evaluateDiagnostics(diagnostics);
   const consoleReport = renderConsoleReport(diagnostics, findings);
 
@@ -50,6 +50,10 @@ function parseArgs(argv: string[]): CliArgs {
   }
 
   return parsed;
+}
+
+function stripByteOrderMark(value: string): string {
+  return value.charCodeAt(0) === 0xfeff ? value.slice(1) : value;
 }
 
 function printHelp(): void {
