@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Outlook-TS</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="topbar" aria-label="Diagnostic controls">
+        <div>
+          <h1>Outlook-TS</h1>
+          <p id="subtitle">Local Microsoft 365 Outlook diagnostics</p>
+        </div>
+        <div class="actions">
+          <button id="loadClassicSample" type="button" title="Load classic/new Outlook sample">Classic Sample</button>
+          <button id="loadCloudSample" type="button" title="Load Exchange Online and Graph sample">Cloud Sample</button>
+          <button id="exportMarkdown" type="button" title="Export the current report as Markdown" disabled>Export MD</button>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <aside class="panel intake">
+          <label class="dropzone" id="dropzone">
+            <input id="fileInput" type="file" accept=".json,application/json" />
+            <span class="dropIcon" aria-hidden="true">+</span>
+            <strong>Drop diagnostics JSON</strong>
+            <span>or choose `outlook-diagnostics.json`</span>
+          </label>
+
+          <div class="metaGrid" id="metaGrid">
+            <div>
+              <span>Collected</span>
+              <strong id="metaCollected">Waiting</strong>
+            </div>
+            <div>
+              <span>Computer</span>
+              <strong id="metaComputer">-</strong>
+            </div>
+            <div>
+              <span>User</span>
+              <strong id="metaUser">-</strong>
+            </div>
+            <div>
+              <span>Findings</span>
+              <strong id="metaFindings">0</strong>
+            </div>
+          </div>
+
+          <textarea id="jsonInput" spellcheck="false" placeholder="Paste diagnostics JSON here"></textarea>
+          <button id="analyzeButton" class="primary" type="button">Analyze</button>
+          <p class="status" id="status">Ready.</p>
+        </aside>
+
+        <section class="results" aria-live="polite">
+          <div class="summaryStrip">
+            <div class="score critical">
+              <span>Critical</span>
+              <strong id="criticalCount">0</strong>
+            </div>
+            <div class="score warning">
+              <span>Warning</span>
+              <strong id="warningCount">0</strong>
+            </div>
+            <div class="score info">
+              <span>Info</span>
+              <strong id="infoCount">0</strong>
+            </div>
+          </div>
+
+          <div id="findings" class="findings empty">
+            <div class="emptyState">
+              <strong>No report loaded</strong>
+              <span>Upload JSON, paste it, or load a sample.</span>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

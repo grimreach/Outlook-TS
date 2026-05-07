@@ -9,7 +9,8 @@
     "check": "tsc -p tsconfig.json --noEmit",
     "diagnose": "node dist/index.js diagnose",
     "diagnose:sample": "node dist/index.js diagnose --input samples/classic-modern-toggle.json",
-    "diagnose:cloud-sample": "node dist/index.js diagnose --input samples/cloud-expanded.json"
+    "diagnose:cloud-sample": "node dist/index.js diagnose --input samples/cloud-expanded.json",
+    "web": "node dist/server.js"
   },
   "bin": {
     "outlook-ts": "dist/index.js"

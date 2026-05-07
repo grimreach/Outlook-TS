@@ -81,6 +81,18 @@ npm run build
 npm run diagnose:sample
 ```
 
+Start the local web app:
+
+```powershell
+npm run web
+```
+
+Open this in a browser on the tech PC:
+
+```text
+http://127.0.0.1:3000
+```
+
 ## Git Workflow
 
 Use this if Git is installed:
@@ -91,6 +103,12 @@ cd Outlook-TS
 .\scripts\Test-Prerequisites.ps1
 npm install
 npm run build
+```
+
+Start the local web app:
+
+```powershell
+npm run web
 ```
 
 ## Local Outlook Diagnostics
@@ -122,3 +140,5 @@ Install-Module Microsoft.Graph -Scope CurrentUser
 .\scripts\Merge-Diagnostics.ps1 -InputPath .\outlook-diagnostics.json, .\exchange-diagnostics.json, .\graph-diagnostics.json -OutputPath .\combined.json
 node .\dist\index.js diagnose --input .\combined.json --markdown .\report.md
 ```
+
+For a dashboard view, run `npm run web` and upload `combined.json`.

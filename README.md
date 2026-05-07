@@ -47,6 +47,18 @@ npm run diagnose:sample
 npm run diagnose:cloud-sample
 ```
 
+Start the local web app:
+
+```bash
+npm run web
+```
+
+Then open:
+
+```text
+http://127.0.0.1:3000
+```
+
 On the affected Windows user profile, collect diagnostics:
 
 ```powershell
@@ -80,6 +92,8 @@ Merge local, Exchange Online, and Graph output into one diagnostic bundle:
 .\scripts\Merge-Diagnostics.ps1 -InputPath .\outlook-diagnostics.json, .\exchange-diagnostics.json, .\graph-diagnostics.json -OutputPath .\combined.json
 node .\dist\index.js diagnose --input .\combined.json --markdown .\report.md
 ```
+
+You can also open the local web app and upload `combined.json`.
 
 Force classic Outlook launch behavior for the signed-in Windows user:
 
