@@ -34,6 +34,59 @@
       "fullAccessDelegates": ["helpdesk1@contoso.com", "manager@contoso.com"],
       "nonInheritedPermissionCount": 2
     },
+    "calendarFolders": [
+      {
+        "name": "Calendar",
+        "folderPath": "/Calendar",
+        "folderType": "Calendar",
+        "itemsInFolder": 0,
+        "itemsInFolderAndSubfolders": 0,
+        "folderSize": "0 B (0 bytes)",
+        "folderAndSubfolderSize": "0 B (0 bytes)",
+        "oldestItemReceivedDate": null,
+        "newestItemReceivedDate": null
+      },
+      {
+        "name": "Migrated Calendar",
+        "folderPath": "/Migrated Calendar",
+        "folderType": "Calendar",
+        "itemsInFolder": 824,
+        "itemsInFolderAndSubfolders": 824,
+        "folderSize": "48 MB (50,331,648 bytes)",
+        "folderAndSubfolderSize": "48 MB (50,331,648 bytes)",
+        "oldestItemReceivedDate": "2022-01-12T14:00:00.000Z",
+        "newestItemReceivedDate": "2026-05-06T18:30:00.000Z"
+      }
+    ],
+    "defaultCalendar": {
+      "name": "Calendar",
+      "folderPath": "/Calendar",
+      "folderType": "Calendar",
+      "itemsInFolder": 0,
+      "itemsInFolderAndSubfolders": 0,
+      "folderSize": "0 B (0 bytes)",
+      "folderAndSubfolderSize": "0 B (0 bytes)",
+      "oldestItemReceivedDate": null,
+      "newestItemReceivedDate": null
+    },
+    "calendarFolderSettings": {
+      "identity": "alex@contoso.com:\\Calendar",
+      "publishEnabled": false,
+      "detailLevel": null,
+      "searchableUrlEnabled": false
+    },
+    "calendarFolderPermissions": [
+      {
+        "user": "Default",
+        "accessRights": ["AvailabilityOnly"],
+        "sharingPermissionFlags": []
+      },
+      {
+        "user": "Anonymous",
+        "accessRights": ["None"],
+        "sharingPermissionFlags": []
+      }
+    ],
     "cas": {
       "owaEnabled": true,
       "mapiEnabled": false,

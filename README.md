@@ -20,6 +20,7 @@ Outlook-TS is a Microsoft 365 Outlook troubleshooting toolkit. The first version
   - Mailbox size, item counts, deleted item counts, and quota percent.
   - Mailbox-level forwarding.
   - Optional FullAccess delegate summary.
+  - Calendar folder statistics, default calendar settings, and calendar folder permissions.
 - Collects optional Microsoft Graph evidence:
   - Mailbox settings availability.
   - Mail folder count, hidden folder count, and largest folders.

@@ -86,6 +86,15 @@ export interface ExchangeOnlineDiagnostics {
     fullAccessDelegates?: string[];
     nonInheritedPermissionCount?: number;
   };
+  calendarFolders?: ExchangeCalendarFolderSummary[];
+  defaultCalendar?: ExchangeCalendarFolderSummary;
+  calendarFolderSettings?: {
+    identity?: string;
+    publishEnabled?: boolean;
+    detailLevel?: string | null;
+    searchableUrlEnabled?: boolean;
+  };
+  calendarFolderPermissions?: ExchangeCalendarPermissionSummary[];
   cas?: {
     owaEnabled?: boolean;
     mapiEnabled?: boolean;
@@ -95,6 +104,24 @@ export interface ExchangeOnlineDiagnostics {
     smtpClientAuthenticationDisabled?: boolean;
     ewsEnabled?: boolean;
   };
+}
+
+export interface ExchangeCalendarFolderSummary {
+  name?: string;
+  folderPath?: string;
+  folderType?: string;
+  itemsInFolder?: number;
+  itemsInFolderAndSubfolders?: number;
+  folderSize?: string;
+  folderAndSubfolderSize?: string;
+  oldestItemReceivedDate?: string | null;
+  newestItemReceivedDate?: string | null;
+}
+
+export interface ExchangeCalendarPermissionSummary {
+  user?: string;
+  accessRights?: string[];
+  sharingPermissionFlags?: string[];
 }
 
 export interface GraphDiagnostics {

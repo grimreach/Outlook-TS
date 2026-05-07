@@ -239,6 +239,75 @@ function evaluateExchangeOnline(input: OutlookDiagnostics): Finding[] {
     });
   }
 
+  findings.push(...evaluateExchangeCalendar(input));
+
+  return findings;
+}
+
+function evaluateExchangeCalendar(input: OutlookDiagnostics): Finding[] {
+  const findings: Finding[] = [];
+  const exchange = input.exchangeOnline;
+  if (!exchange) {
+    return findings;
+  }
+
+  const calendarFolders = exchange.calendarFolders ?? [];
+  if (calendarFolders.length >= 25) {
+    findings.push({
+      id: "exchange-many-calendar-folders",
+      severity: "warning",
+      title: "Exchange reports many calendar folders",
+      evidence: [`Calendar folder count: ${calendarFolders.length}`],
+      recommendation:
+        "Review duplicate, shared, or stale calendar folders. If OWA is empty, confirm the user is viewing the folder that actually contains calendar items."
+    });
+  }
+
+  if (exchange.defaultCalendar && (exchange.defaultCalendar.itemsInFolderAndSubfolders ?? exchange.defaultCalendar.itemsInFolder ?? 0) === 0) {
+    findings.push({
+      id: "exchange-default-calendar-empty",
+      severity: "warning",
+      title: "Exchange reports the default calendar is empty",
+      evidence: [
+        `Folder: ${exchange.defaultCalendar.folderPath ?? exchange.defaultCalendar.name ?? "Calendar"}`,
+        `Items: ${exchange.defaultCalendar.itemsInFolder ?? 0}`
+      ],
+      recommendation:
+        "If the user expects meetings in the default calendar, compare against Graph calendar view and check whether items are in another calendar folder."
+    });
+  }
+
+  const populatedNonDefault = calendarFolders
+    .filter((folder) => folder.folderPath !== exchange.defaultCalendar?.folderPath)
+    .filter((folder) => (folder.itemsInFolderAndSubfolders ?? folder.itemsInFolder ?? 0) > 0)
+    .slice(0, 5);
+  if ((exchange.defaultCalendar?.itemsInFolder ?? 0) === 0 && populatedNonDefault.length > 0) {
+    findings.push({
+      id: "calendar-items-in-non-default-folders",
+      severity: "warning",
+      title: "Calendar items appear to be in non-default calendar folders",
+      evidence: populatedNonDefault.map((folder) => {
+        return `${folder.folderPath ?? folder.name ?? "unknown"} has ${folder.itemsInFolderAndSubfolders ?? folder.itemsInFolder ?? 0} item(s)`;
+      }),
+      recommendation:
+        "Ask the user which calendar should contain the meetings. A migrated or recreated calendar can leave events outside the default calendar that new Outlook expects."
+    });
+  }
+
+  const defaultPermission = (exchange.calendarFolderPermissions ?? []).find((permission) => {
+    return permission.user?.toLowerCase() === "default";
+  });
+  if (defaultPermission?.accessRights?.some((right) => ["Editor", "PublishingEditor", "Owner"].includes(right))) {
+    findings.push({
+      id: "calendar-default-permission-elevated",
+      severity: "warning",
+      title: "Default calendar permission is elevated",
+      evidence: [`Default permission: ${(defaultPermission.accessRights ?? []).join(", ")}`],
+      recommendation:
+        "Confirm this is intentional. Overly broad default permissions can confuse support triage and expose calendar data."
+    });
+  }
+
   return findings;
 }
 

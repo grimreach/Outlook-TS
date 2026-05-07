@@ -72,6 +72,9 @@ $mailbox = $null
 $statistics = $null
 $cas = $null
 $permissions = @()
+$calendarFolders = @()
+$calendarFolderSettings = $null
+$calendarFolderPermissions = @()
 
 try {
     $mailbox = Get-EXOMailbox -Identity $Identity -Properties DisplayName,PrimarySmtpAddress,RecipientTypeDetails,AccountDisabled,LitigationHoldEnabled,ArchiveStatus,ForwardingSmtpAddress,ForwardingAddress,DeliverToMailboxAndForward,HiddenFromAddressListsEnabled,RetentionPolicy,RoleAssignmentPolicy,OWAMailboxPolicy,IssueWarningQuota,ProhibitSendQuota,ProhibitSendReceiveQuota -ErrorAction Stop
@@ -108,6 +111,32 @@ if ($null -ne $mailbox) {
             Add-CollectorError "Get-EXOMailboxPermission failed for '$Identity': $($_.Exception.Message)"
         }
     }
+
+    try {
+        $calendarFolders = @(Get-EXOMailboxFolderStatistics -Identity $Identity -FolderScope Calendar -IncludeOldestAndNewestItems -ErrorAction Stop)
+    }
+    catch {
+        Add-CollectorError "Get-EXOMailboxFolderStatistics calendar scope failed for '$Identity': $($_.Exception.Message)"
+    }
+
+    try {
+        $calendarFolderSettings = Get-MailboxCalendarFolder -Identity "${Identity}:\Calendar" -ErrorAction Stop
+    }
+    catch {
+        Add-CollectorError "Get-MailboxCalendarFolder failed for '$Identity`:\Calendar': $($_.Exception.Message)"
+    }
+
+    try {
+        $calendarFolderPermissions = @(Get-EXOMailboxFolderPermission -Identity "${Identity}:\Calendar" -ErrorAction Stop)
+    }
+    catch {
+        try {
+            $calendarFolderPermissions = @(Get-MailboxFolderPermission -Identity "${Identity}:\Calendar" -ErrorAction Stop)
+        }
+        catch {
+            Add-CollectorError "Get mailbox calendar folder permission failed for '$Identity`:\Calendar': $($_.Exception.Message)"
+        }
+    }
 }
 
 $totalItemSize = if ($null -ne $statistics) { $statistics.TotalItemSize } else { $null }
@@ -128,6 +157,24 @@ $quotaUsedPercent = $null
 if ($null -ne $totalBytes -and $null -ne $quotaBytes -and $quotaBytes -gt 0) {
     $quotaUsedPercent = [math]::Round(($totalBytes / $quotaBytes) * 100, 2)
 }
+
+$calendarFolderSummaries = @($calendarFolders | ForEach-Object {
+    [ordered]@{
+        name = $_.Name
+        folderPath = if ($_.FolderPath) { $_.FolderPath.ToString() } else { $null }
+        folderType = if ($_.FolderType) { $_.FolderType.ToString() } else { $null }
+        itemsInFolder = $_.ItemsInFolder
+        itemsInFolderAndSubfolders = $_.ItemsInFolderAndSubfolders
+        folderSize = if ($_.FolderSize) { $_.FolderSize.ToString() } else { $null }
+        folderAndSubfolderSize = if ($_.FolderAndSubfolderSize) { $_.FolderAndSubfolderSize.ToString() } else { $null }
+        oldestItemReceivedDate = if ($_.OldestItemReceivedDate) { ([datetime]$_.OldestItemReceivedDate).ToUniversalTime().ToString("o") } else { $null }
+        newestItemReceivedDate = if ($_.NewestItemReceivedDate) { ([datetime]$_.NewestItemReceivedDate).ToUniversalTime().ToString("o") } else { $null }
+    }
+})
+
+$defaultCalendarSummary = @($calendarFolderSummaries | Where-Object {
+    $_.folderPath -eq "/Calendar" -or $_.name -eq "Calendar"
+} | Select-Object -First 1)
 
 $diagnostics = [ordered]@{
     collectedAt = (Get-Date).ToUniversalTime().ToString("o")
@@ -164,6 +211,21 @@ $diagnostics = [ordered]@{
             fullAccessDelegates = @($permissions | Select-Object -First 25 | ForEach-Object { $_.User.ToString() })
             nonInheritedPermissionCount = @($permissions).Count
         }
+        calendarFolders = @($calendarFolderSummaries)
+        defaultCalendar = if (@($defaultCalendarSummary).Count -gt 0) { $defaultCalendarSummary[0] } else { $null }
+        calendarFolderSettings = [ordered]@{
+            identity = if ($calendarFolderSettings) { $calendarFolderSettings.Identity.ToString() } else { $null }
+            publishEnabled = if ($calendarFolderSettings) { $calendarFolderSettings.PublishEnabled } else { $null }
+            detailLevel = if ($calendarFolderSettings -and $calendarFolderSettings.DetailLevel) { $calendarFolderSettings.DetailLevel.ToString() } else { $null }
+            searchableUrlEnabled = if ($calendarFolderSettings) { $calendarFolderSettings.SearchableUrlEnabled } else { $null }
+        }
+        calendarFolderPermissions = @($calendarFolderPermissions | ForEach-Object {
+            [ordered]@{
+                user = if ($_.User) { $_.User.ToString() } else { $null }
+                accessRights = @($_.AccessRights | ForEach-Object { $_.ToString() })
+                sharingPermissionFlags = @($_.SharingPermissionFlags | ForEach-Object { $_.ToString() })
+            }
+        })
         cas = [ordered]@{
             owaEnabled = if ($cas) { $cas.OWAEnabled } else { $null }
             mapiEnabled = if ($cas) { $cas.MAPIEnabled } else { $null }

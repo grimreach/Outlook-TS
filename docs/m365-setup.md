@@ -27,6 +27,8 @@ The current collector wraps these checks:
 
 If already connected to Exchange Online, omit `-Connect`.
 
+The Exchange Online collector also checks calendar folder statistics, default calendar folder settings, and calendar folder permissions.
+
 ## Microsoft Graph Lane
 
 Start with delegated permissions where possible:
