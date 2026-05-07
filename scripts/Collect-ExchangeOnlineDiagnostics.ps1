@@ -220,10 +220,12 @@ $diagnostics = [ordered]@{
             searchableUrlEnabled = if ($calendarFolderSettings) { $calendarFolderSettings.SearchableUrlEnabled } else { $null }
         }
         calendarFolderPermissions = @($calendarFolderPermissions | ForEach-Object {
+            $accessRights = if ($_.AccessRights) { @($_.AccessRights | ForEach-Object { $_.ToString() }) } else { @() }
+            $sharingPermissionFlags = if ($_.SharingPermissionFlags) { @($_.SharingPermissionFlags | ForEach-Object { $_.ToString() }) } else { @() }
             [ordered]@{
                 user = if ($_.User) { $_.User.ToString() } else { $null }
-                accessRights = @($_.AccessRights | ForEach-Object { $_.ToString() })
-                sharingPermissionFlags = @($_.SharingPermissionFlags | ForEach-Object { $_.ToString() })
+                accessRights = @($accessRights)
+                sharingPermissionFlags = @($sharingPermissionFlags)
             }
         })
         cas = [ordered]@{
