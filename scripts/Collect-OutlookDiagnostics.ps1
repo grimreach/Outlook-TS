@@ -22,7 +22,12 @@ function Get-RegistryValue {
         return $null
     }
 
-    return $item.$Name
+    $property = $item.PSObject.Properties[$Name]
+    if ($null -eq $property) {
+        return $null
+    }
+
+    return $property.Value
 }
 
 function Get-RegistrySubkeyNames {
