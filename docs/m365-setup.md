@@ -55,6 +55,14 @@ Install-Module Microsoft.Graph -Scope CurrentUser
 
 If already connected to Graph with the right scopes, omit `-Connect`.
 
+For new Outlook calendar sync issues, collect a wider calendar window:
+
+```powershell
+.\scripts\Collect-GraphDiagnostics.ps1 -UserId user@contoso.com -Connect -IncludeHiddenFolders -CalendarDaysBack 14 -CalendarDaysForward 120
+```
+
+The Graph collector requests `Calendars.Read` along with mail and mailbox settings scopes.
+
 ## Combined Report Flow
 
 ```powershell

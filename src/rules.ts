@@ -313,6 +313,107 @@ function evaluateGraph(input: OutlookDiagnostics): Finding[] {
     });
   }
 
+  findings.push(...evaluateGraphCalendar(input));
+
+  return findings;
+}
+
+function evaluateGraphCalendar(input: OutlookDiagnostics): Finding[] {
+  const findings: Finding[] = [];
+  const calendar = input.graph?.calendar;
+  if (!calendar) {
+    return findings;
+  }
+
+  for (const error of calendar.errors ?? []) {
+    findings.push({
+      id: "graph-calendar-collector-error",
+      severity: "warning",
+      title: "Microsoft Graph calendar collector reported an error",
+      evidence: [error],
+      recommendation:
+        "Confirm Graph has Calendars.Read consent and that the signed-in technician can read the target user's calendar."
+    });
+  }
+
+  if (calendar.calendarCount === 0) {
+    findings.push({
+      id: "graph-calendar-none-found",
+      severity: "critical",
+      title: "Graph did not return any calendars for the mailbox",
+      evidence: [`Target: ${input.graph?.targetUserPrincipalName ?? input.targetUserPrincipalName ?? "unknown"}`],
+      recommendation:
+        "Confirm the mailbox is healthy and that Graph calendar permissions are granted before treating this as a client reinstall issue."
+    });
+  }
+
+  if ((calendar.calendarCount ?? 0) >= 25) {
+    findings.push({
+      id: "many-calendars",
+      severity: "warning",
+      title: "Mailbox has many calendars",
+      evidence: [`Calendars returned by Graph: ${calendar.calendarCount}`],
+      recommendation:
+        "Review shared/duplicate calendars. A large calendar set can make new Outlook calendar sync symptoms harder to isolate."
+    });
+  }
+
+  if ((calendar.defaultCalendar?.eventCount ?? 0) === 0 && (calendar.calendarCount ?? 0) > 0) {
+    findings.push({
+      id: "default-calendar-empty-in-window",
+      severity: "warning",
+      title: "Default calendar has no events in the sampled sync window",
+      evidence: [
+        `Window: ${calendar.syncWindowStart ?? "unknown"} to ${calendar.syncWindowEnd ?? "unknown"}`,
+        `Default calendar: ${calendar.defaultCalendar?.name ?? "unknown"}`
+      ],
+      recommendation:
+        "Compare against Outlook on the web. If OWA shows events but Graph does not, focus on mailbox/service access. If Graph shows none because events are in another calendar, check which calendar the user expects to sync."
+    });
+  }
+
+  if ((calendar.recurringEventCount ?? 0) >= 100) {
+    findings.push({
+      id: "many-recurring-calendar-events",
+      severity: "warning",
+      title: "Calendar sync window contains many recurring events",
+      evidence: [
+        `Recurring events in sampled window: ${calendar.recurringEventCount}`,
+        `Total events in sampled window: ${calendar.eventCount ?? "unknown"}`
+      ],
+      recommendation:
+        "Ask whether the issue involves recurring meetings. Recurring series and exceptions are common places to compare new Outlook, OWA, and classic Outlook behavior."
+    });
+  }
+
+  if ((calendar.cancelledEventCount ?? 0) >= 25) {
+    findings.push({
+      id: "many-cancelled-calendar-events",
+      severity: "warning",
+      title: "Calendar sync window contains many cancelled events",
+      evidence: [
+        `Cancelled events in sampled window: ${calendar.cancelledEventCount}`,
+        `Window: ${calendar.syncWindowStart ?? "unknown"} to ${calendar.syncWindowEnd ?? "unknown"}`
+      ],
+      recommendation:
+        "Review whether cancelled or stale meetings are the items failing to sync. Compare item visibility in OWA before reinstalling the client again."
+    });
+  }
+
+  if ((calendar.eventTimeZoneMismatchCount ?? 0) > 0) {
+    findings.push({
+      id: "calendar-event-time-zone-mismatches",
+      severity: "warning",
+      title: "Some calendar events use a different time zone than mailbox settings",
+      evidence: [
+        `Mismatched events in sampled window: ${calendar.eventTimeZoneMismatchCount}`,
+        `Mailbox time zone: ${input.graph?.mailboxSettings?.timeZone ?? "unknown"}`
+      ],
+      recommendation:
+        "If the symptom is wrong meeting times, compare mailbox time zone, Windows time zone, OWA time zone, and the event time zones."
+    });
+  }
+
   return findings;
 }
 

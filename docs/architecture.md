@@ -78,3 +78,9 @@ The v1 tool checks:
 - Many hidden folders.
 - Forwarding or redirect inbox rules.
 - Large inbox rule counts.
+- Calendar collector permission or access errors.
+- No calendars returned by Graph.
+- Many calendars.
+- Empty default calendar in the sampled sync window.
+- Large recurring/cancelled calendar event counts.
+- Calendar event time zone mismatches.

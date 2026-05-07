@@ -24,6 +24,7 @@ Outlook-TS is a Microsoft 365 Outlook troubleshooting toolkit. The first version
   - Mailbox settings availability.
   - Mail folder count, hidden folder count, and largest folders.
   - Inbox rule count and forwarding/delete/move rule summaries.
+  - Calendar list, default calendar activity, sampled calendar events, recurring/cancelled event counts, and time zone mismatches.
 
 ## Why This First
 
@@ -84,6 +85,12 @@ Collect Microsoft Graph diagnostics:
 ```powershell
 Install-Module Microsoft.Graph -Scope CurrentUser
 .\scripts\Collect-GraphDiagnostics.ps1 -UserId user@contoso.com -Connect -IncludeHiddenFolders
+```
+
+For calendar sync issues, the Graph collector samples from 7 days back to 60 days forward by default:
+
+```powershell
+.\scripts\Collect-GraphDiagnostics.ps1 -UserId user@contoso.com -Connect -CalendarDaysBack 14 -CalendarDaysForward 120
 ```
 
 Merge local, Exchange Online, and Graph output into one diagnostic bundle:

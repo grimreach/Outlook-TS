@@ -4,7 +4,9 @@ param(
     [string]$OutputPath = ".\graph-diagnostics.json",
     [switch]$Connect,
     [switch]$IncludeHiddenFolders,
-    [int]$LargestFolderCount = 10
+    [int]$LargestFolderCount = 10,
+    [int]$CalendarDaysBack = 7,
+    [int]$CalendarDaysForward = 60
 )
 
 Set-StrictMode -Version Latest
@@ -35,6 +37,24 @@ function Convert-RecipientList {
     })
 }
 
+function Get-ObjectPropertyValue {
+    param(
+        [object]$InputObject,
+        [Parameter(Mandatory = $true)][string]$Name
+    )
+
+    if ($null -eq $InputObject) {
+        return $null
+    }
+
+    $property = $InputObject.PSObject.Properties[$Name]
+    if ($null -eq $property) {
+        return $null
+    }
+
+    return $property.Value
+}
+
 if (-not (Get-Module -ListAvailable -Name Microsoft.Graph.Authentication)) {
     throw "Microsoft Graph PowerShell is not installed. Run: Install-Module Microsoft.Graph -Scope CurrentUser"
 }
@@ -42,9 +62,10 @@ if (-not (Get-Module -ListAvailable -Name Microsoft.Graph.Authentication)) {
 Import-Module Microsoft.Graph.Authentication
 Import-Module Microsoft.Graph.Users -ErrorAction SilentlyContinue
 Import-Module Microsoft.Graph.Mail -ErrorAction SilentlyContinue
+Import-Module Microsoft.Graph.Calendar -ErrorAction SilentlyContinue
 
 if ($Connect) {
-    Connect-MgGraph -Scopes "User.Read", "MailboxSettings.Read", "Mail.ReadBasic", "Mail.Read" -NoWelcome
+    Connect-MgGraph -Scopes "User.Read", "MailboxSettings.Read", "Mail.ReadBasic", "Mail.Read", "Calendars.Read" -NoWelcome
 }
 
 $errors = New-Object System.Collections.Generic.List[string]
@@ -52,6 +73,13 @@ $context = Get-MgContext
 $settings = $null
 $folders = @()
 $rules = @()
+$calendars = @()
+$calendarSummaries = @()
+$defaultCalendarSummary = $null
+$allCalendarEvents = @()
+$calendarErrors = @()
+$syncWindowStart = (Get-Date).AddDays(-1 * $CalendarDaysBack)
+$syncWindowEnd = (Get-Date).AddDays($CalendarDaysForward)
 
 try {
     $settings = Get-MgUserMailboxSetting -UserId $UserId -ErrorAction Stop
@@ -81,6 +109,13 @@ try {
 }
 catch {
     Add-CollectorError "Get-MgUserMailFolderMessageRule failed for '$UserId': $($_.Exception.Message)"
+}
+
+try {
+    $calendars = @(Get-MgUserCalendar -UserId $UserId -All -ErrorAction Stop)
+}
+catch {
+    $calendarErrors += "Get-MgUserCalendar failed for '$UserId': $($_.Exception.Message)"
 }
 
 $largestFolders = @($folders |
@@ -125,6 +160,72 @@ if ($settings -and $settings.AutomaticRepliesSetting -and $settings.AutomaticRep
     $automaticRepliesStatus = $settings.AutomaticRepliesSetting.Status.ToString()
 }
 
+foreach ($calendar in $calendars) {
+    $calendarId = Get-ObjectPropertyValue -InputObject $calendar -Name "Id"
+    $calendarName = Get-ObjectPropertyValue -InputObject $calendar -Name "Name"
+    $events = @()
+
+    if ($calendarId) {
+        try {
+            $events = @(Get-MgUserCalendarView `
+                -UserId $UserId `
+                -CalendarId $calendarId `
+                -StartDateTime $syncWindowStart.ToString("o") `
+                -EndDateTime $syncWindowEnd.ToString("o") `
+                -All `
+                -ErrorAction Stop)
+        }
+        catch {
+            $calendarErrors += "Get-MgUserCalendarView failed for calendar '$calendarName': $($_.Exception.Message)"
+        }
+    }
+
+    $allCalendarEvents += $events
+    $recurringEvents = @($events | Where-Object {
+        $eventType = Get-ObjectPropertyValue -InputObject $_ -Name "Type"
+        $eventType -and $eventType.ToString() -ne "singleInstance"
+    })
+    $cancelledEvents = @($events | Where-Object { Get-ObjectPropertyValue -InputObject $_ -Name "IsCancelled" })
+
+    $owner = Get-ObjectPropertyValue -InputObject $calendar -Name "Owner"
+    $ownerAddress = if ($owner) { Get-ObjectPropertyValue -InputObject $owner -Name "Address" } else { $null }
+
+    $summary = [ordered]@{
+        id = $calendarId
+        name = $calendarName
+        canEdit = Get-ObjectPropertyValue -InputObject $calendar -Name "CanEdit"
+        canShare = Get-ObjectPropertyValue -InputObject $calendar -Name "CanShare"
+        canViewPrivateItems = Get-ObjectPropertyValue -InputObject $calendar -Name "CanViewPrivateItems"
+        isDefaultCalendar = Get-ObjectPropertyValue -InputObject $calendar -Name "IsDefaultCalendar"
+        ownerAddress = $ownerAddress
+        eventCount = @($events).Count
+        recurringEventCount = @($recurringEvents).Count
+        cancelledEventCount = @($cancelledEvents).Count
+    }
+
+    $calendarSummaries += $summary
+    if ($summary.isDefaultCalendar -eq $true -or $calendarName -eq "Calendar") {
+        if ($null -eq $defaultCalendarSummary -or $summary.isDefaultCalendar -eq $true) {
+            $defaultCalendarSummary = $summary
+        }
+    }
+}
+
+$mailboxTimeZone = if ($settings) { $settings.TimeZone } else { $null }
+$eventTimeZoneMismatchCount = 0
+if ($mailboxTimeZone) {
+    $eventTimeZoneMismatchCount = @($allCalendarEvents | Where-Object {
+        $start = Get-ObjectPropertyValue -InputObject $_ -Name "Start"
+        $eventTimeZone = if ($start) { Get-ObjectPropertyValue -InputObject $start -Name "TimeZone" } else { $null }
+        $eventTimeZone -and $eventTimeZone -ne $mailboxTimeZone
+    }).Count
+}
+
+$exceptionEventCount = @($allCalendarEvents | Where-Object {
+    $eventType = Get-ObjectPropertyValue -InputObject $_ -Name "Type"
+    $eventType -and $eventType.ToString() -eq "exception"
+}).Count
+
 $diagnostics = [ordered]@{
     collectedAt = (Get-Date).ToUniversalTime().ToString("o")
     targetUserPrincipalName = $UserId
@@ -149,6 +250,22 @@ $diagnostics = [ordered]@{
         enabledInboxRuleCount = @($rules | Where-Object { $_.IsEnabled }).Count
         forwardingRuleCount = @($ruleSummaries | Where-Object { $_.hasForwardingAction }).Count
         suspiciousRules = @($ruleSummaries | Where-Object { $_.hasForwardingAction -or $_.hasDeleteOrMoveAction })
+        calendar = [ordered]@{
+            errors = @($calendarErrors)
+            calendarCount = @($calendars).Count
+            calendars = @($calendarSummaries)
+            defaultCalendar = $defaultCalendarSummary
+            syncWindowStart = $syncWindowStart.ToUniversalTime().ToString("o")
+            syncWindowEnd = $syncWindowEnd.ToUniversalTime().ToString("o")
+            eventCount = @($allCalendarEvents).Count
+            recurringEventCount = @($allCalendarEvents | Where-Object {
+                $eventType = Get-ObjectPropertyValue -InputObject $_ -Name "Type"
+                $eventType -and $eventType.ToString() -ne "singleInstance"
+            }).Count
+            cancelledEventCount = @($allCalendarEvents | Where-Object { Get-ObjectPropertyValue -InputObject $_ -Name "IsCancelled" }).Count
+            exceptionEventCount = $exceptionEventCount
+            eventTimeZoneMismatchCount = $eventTimeZoneMismatchCount
+        }
     }
 }
 

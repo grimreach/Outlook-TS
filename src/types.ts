@@ -118,6 +118,34 @@ export interface GraphDiagnostics {
   enabledInboxRuleCount?: number;
   forwardingRuleCount?: number;
   suspiciousRules?: MessageRuleSummary[];
+  calendar?: CalendarDiagnostics;
+}
+
+export interface CalendarDiagnostics {
+  errors?: string[];
+  calendarCount?: number;
+  calendars?: CalendarSummary[];
+  defaultCalendar?: CalendarSummary;
+  syncWindowStart?: string;
+  syncWindowEnd?: string;
+  eventCount?: number;
+  recurringEventCount?: number;
+  cancelledEventCount?: number;
+  exceptionEventCount?: number;
+  eventTimeZoneMismatchCount?: number;
+}
+
+export interface CalendarSummary {
+  id?: string;
+  name?: string;
+  canEdit?: boolean;
+  canShare?: boolean;
+  canViewPrivateItems?: boolean;
+  isDefaultCalendar?: boolean;
+  ownerAddress?: string;
+  eventCount?: number;
+  recurringEventCount?: number;
+  cancelledEventCount?: number;
 }
 
 export interface MailFolderSummary {

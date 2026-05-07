@@ -83,6 +83,55 @@
         "redirectTo": [],
         "moveToFolder": null
       }
-    ]
+    ],
+    "calendar": {
+      "errors": [],
+      "calendarCount": 28,
+      "calendars": [
+        {
+          "id": "calendar-id-1",
+          "name": "Calendar",
+          "canEdit": true,
+          "canShare": true,
+          "canViewPrivateItems": true,
+          "isDefaultCalendar": true,
+          "ownerAddress": "alex@contoso.com",
+          "eventCount": 0,
+          "recurringEventCount": 0,
+          "cancelledEventCount": 0
+        },
+        {
+          "id": "calendar-id-2",
+          "name": "Project Shared Calendar",
+          "canEdit": false,
+          "canShare": false,
+          "canViewPrivateItems": false,
+          "isDefaultCalendar": false,
+          "ownerAddress": "project@contoso.com",
+          "eventCount": 145,
+          "recurringEventCount": 118,
+          "cancelledEventCount": 31
+        }
+      ],
+      "defaultCalendar": {
+        "id": "calendar-id-1",
+        "name": "Calendar",
+        "canEdit": true,
+        "canShare": true,
+        "canViewPrivateItems": true,
+        "isDefaultCalendar": true,
+        "ownerAddress": "alex@contoso.com",
+        "eventCount": 0,
+        "recurringEventCount": 0,
+        "cancelledEventCount": 0
+      },
+      "syncWindowStart": "2026-04-30T12:29:00.000Z",
+      "syncWindowEnd": "2026-07-06T12:29:00.000Z",
+      "eventCount": 145,
+      "recurringEventCount": 118,
+      "cancelledEventCount": 31,
+      "exceptionEventCount": 14,
+      "eventTimeZoneMismatchCount": 4
+    }
   }
 }
