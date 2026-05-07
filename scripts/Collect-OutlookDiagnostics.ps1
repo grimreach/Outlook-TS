@@ -5,7 +5,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
-$collectorVersion = "0.1.1"
+$collectorVersion = "0.1.2"
 
 Write-Host "Outlook-TS local collector $collectorVersion"
 
