@@ -31,6 +31,8 @@ Microsoft documents that when the new Outlook toggle is enabled, attempts to lau
 
 ## Quick Start
 
+For Windows machines that do not have Git or winget, use [docs/WINDOWS-SETUP.md](docs/WINDOWS-SETUP.md).
+
 Install and build:
 
 ```bash
