@@ -1,0 +1,47 @@
+{
+  "collectedAt": "2026-05-07T12:00:00.000Z",
+  "computerName": "USER-PC",
+  "userName": "CONTOSO\\alex",
+  "os": {
+    "caption": "Microsoft Windows 11 Pro",
+    "version": "10.0.26100",
+    "buildNumber": "26100"
+  },
+  "office": {
+    "platform": "x64",
+    "clientVersionToReport": "16.0.18730.20186",
+    "updateChannel": "Current",
+    "productReleaseIds": "O365ProPlusRetail"
+  },
+  "newOutlook": {
+    "installed": true,
+    "packageFullName": "Microsoft.OutlookForWindows_1.2026.430.100_x64__8wekyb3d8bbwe",
+    "version": "1.2026.430.100",
+    "installLocation": "C:\\Program Files\\WindowsApps\\Microsoft.OutlookForWindows_1.2026.430.100_x64__8wekyb3d8bbwe",
+    "useNewOutlook": 1,
+    "useNewOutlookRegistryPath": "HKCU:\\Software\\Microsoft\\Office\\16.0\\Outlook\\Preferences\\UseNewOutlook"
+  },
+  "classicOutlook": {
+    "defaultProfile": "Outlook",
+    "profiles": ["Outlook"],
+    "profileCount": 1,
+    "executablePaths": ["C:\\Program Files\\Microsoft Office\\root\\Office16\\OUTLOOK.EXE"]
+  },
+  "addins": [
+    {
+      "hive": "HKCU:",
+      "name": "Example.BadAddin",
+      "friendlyName": "Example Add-in",
+      "loadBehavior": 9
+    }
+  ],
+  "eventLog": [
+    {
+      "timeCreated": "2026-05-07T11:45:00.000Z",
+      "providerName": "Application Error",
+      "id": 1000,
+      "levelDisplayName": "Error",
+      "message": "Faulting application name: OUTLOOK.EXE"
+    }
+  ]
+}

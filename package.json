@@ -1,0 +1,23 @@
+{
+  "name": "outlook-ts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Microsoft 365 Outlook troubleshooting toolkit with local Windows collectors and TypeScript diagnostics.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "diagnose": "node dist/index.js diagnose",
+    "diagnose:sample": "node dist/index.js diagnose --input samples/classic-modern-toggle.json"
+  },
+  "bin": {
+    "outlook-ts": "dist/index.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

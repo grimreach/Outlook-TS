@@ -1,0 +1,6 @@
+dist/
+node_modules/
+*.log
+*.tmp
+outlook-diagnostics.json
+report.md
