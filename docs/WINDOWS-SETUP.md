@@ -127,6 +127,13 @@ node .\dist\index.js diagnose --input .\outlook-diagnostics.json
 .\scripts\Repair-NewOutlookToggle.ps1 -ForceClassicLaunch
 ```
 
+## Launch Classic Outlook For Testing
+
+```powershell
+.\scripts\Start-ClassicOutlook.ps1 -Mode Safe -ForceClassicToggle -StopExisting
+.\scripts\Start-ClassicOutlook.ps1 -Mode Profiles -ForceClassicToggle -StopExisting
+```
+
 ## Full Microsoft 365 Diagnostics
 
 ```powershell
