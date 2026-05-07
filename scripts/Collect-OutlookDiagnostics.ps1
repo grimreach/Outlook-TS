@@ -6,6 +6,9 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+$collectorVersion = "0.1.1"
+
+Write-Host "Outlook-TS local collector $collectorVersion"
 
 function Get-RegistryValue {
     param(
@@ -140,7 +143,9 @@ $os = Get-CimInstance -ClassName Win32_OperatingSystem
 $profiles = Get-RegistrySubkeyNames -Path $profilesPath
 
 $diagnostics = [ordered]@{
+    schemaVersion = 1
     collectedAt = (Get-Date).ToUniversalTime().ToString("o")
+    collectorVersion = $collectorVersion
     computerName = $env:COMPUTERNAME
     userName = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
     os = [ordered]@{
