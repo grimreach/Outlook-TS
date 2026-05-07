@@ -77,7 +77,7 @@ function Get-OutlookAddins {
         "HKLM:\Software\WOW6432Node\Microsoft\Office\Outlook\Addins"
     )
 
-    $items = New-Object System.Collections.Generic.List[object]
+    $items = @()
     foreach ($root in $roots) {
         if (-not (Test-Path $root)) {
             continue
@@ -85,7 +85,7 @@ function Get-OutlookAddins {
 
         foreach ($key in Get-ChildItem -Path $root -ErrorAction SilentlyContinue) {
             $props = Get-ItemProperty -Path $key.PSPath -ErrorAction SilentlyContinue
-            $items.Add([ordered]@{
+            $items += New-Object psobject -Property ([ordered]@{
                 hive = ($root -split "\\")[0]
                 name = $key.PSChildName
                 friendlyName = Get-ObjectPropertyValue -InputObject $props -Name "FriendlyName"
@@ -96,7 +96,7 @@ function Get-OutlookAddins {
         }
     }
 
-    return @($items)
+    return $items
 }
 
 function Get-OutlookEvents {
