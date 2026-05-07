@@ -30,6 +30,34 @@ function Get-RegistryValue {
     return $property.Value
 }
 
+function Get-ObjectPropertyValue {
+    param(
+        [object]$InputObject,
+        [Parameter(Mandatory = $true)][string]$Name
+    )
+
+    if ($null -eq $InputObject) {
+        return $null
+    }
+
+    $property = $InputObject.PSObject.Properties[$Name]
+    if ($null -eq $property) {
+        return $null
+    }
+
+    return $property.Value
+}
+
+function Convert-ToStringOrNull {
+    param([object]$Value)
+
+    if ($null -eq $Value) {
+        return $null
+    }
+
+    return $Value.ToString()
+}
+
 function Get-RegistrySubkeyNames {
     param([Parameter(Mandatory = $true)][string]$Path)
 
@@ -58,10 +86,10 @@ function Get-OutlookAddins {
             $items.Add([ordered]@{
                 hive = ($root -split "\\")[0]
                 name = $key.PSChildName
-                friendlyName = $props.FriendlyName
-                description = $props.Description
-                loadBehavior = $props.LoadBehavior
-                manifest = $props.Manifest
+                friendlyName = Get-ObjectPropertyValue -InputObject $props -Name "FriendlyName"
+                description = Get-ObjectPropertyValue -InputObject $props -Name "Description"
+                loadBehavior = Get-ObjectPropertyValue -InputObject $props -Name "LoadBehavior"
+                manifest = Get-ObjectPropertyValue -InputObject $props -Name "Manifest"
             })
         }
     }
@@ -121,16 +149,16 @@ $diagnostics = [ordered]@{
         buildNumber = $os.BuildNumber
     }
     office = [ordered]@{
-        platform = $officeProps.Platform
-        clientVersionToReport = $officeProps.ClientVersionToReport
-        updateChannel = $officeProps.UpdateChannel
-        productReleaseIds = $officeProps.ProductReleaseIds
+        platform = Get-ObjectPropertyValue -InputObject $officeProps -Name "Platform"
+        clientVersionToReport = Get-ObjectPropertyValue -InputObject $officeProps -Name "ClientVersionToReport"
+        updateChannel = Get-ObjectPropertyValue -InputObject $officeProps -Name "UpdateChannel"
+        productReleaseIds = Get-ObjectPropertyValue -InputObject $officeProps -Name "ProductReleaseIds"
     }
     newOutlook = [ordered]@{
         installed = [bool]$newOutlookPackage
-        packageFullName = $newOutlookPackage.PackageFullName
-        version = if ($newOutlookPackage) { $newOutlookPackage.Version.ToString() } else { $null }
-        installLocation = $newOutlookPackage.InstallLocation
+        packageFullName = Get-ObjectPropertyValue -InputObject $newOutlookPackage -Name "PackageFullName"
+        version = Convert-ToStringOrNull -Value (Get-ObjectPropertyValue -InputObject $newOutlookPackage -Name "Version")
+        installLocation = Get-ObjectPropertyValue -InputObject $newOutlookPackage -Name "InstallLocation"
         useNewOutlook = Get-RegistryValue -Path $preferencesPath -Name "UseNewOutlook"
         useNewOutlookRegistryPath = "$preferencesPath\UseNewOutlook"
     }
