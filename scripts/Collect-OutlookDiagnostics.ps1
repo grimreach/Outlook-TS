@@ -1,7 +1,6 @@
-[CmdletBinding()]
 param(
-    [string]$OutputPath = ".\outlook-diagnostics.json",
-    [int]$EventLogHours = 72
+    $OutputPath = ".\outlook-diagnostics.json",
+    $EventLogHours = 72
 )
 
 Set-StrictMode -Version Latest
@@ -141,6 +140,7 @@ $newOutlookPackage = Get-AppxPackage -Name "Microsoft.OutlookForWindows" -ErrorA
 $officeProps = if (Test-Path $clickToRunPath) { Get-ItemProperty -Path $clickToRunPath -ErrorAction SilentlyContinue } else { $null }
 $os = Get-CimInstance -ClassName Win32_OperatingSystem
 $profiles = Get-RegistrySubkeyNames -Path $profilesPath
+$eventLogHoursValue = [int]$EventLogHours
 
 $diagnostics = [ordered]@{
     schemaVersion = 1
@@ -174,7 +174,7 @@ $diagnostics = [ordered]@{
         executablePaths = @(Get-Command OUTLOOK.EXE -ErrorAction SilentlyContinue | ForEach-Object { $_.Source })
     }
     addins = @(Get-OutlookAddins)
-    eventLog = @(Get-OutlookEvents -Hours $EventLogHours)
+    eventLog = @(Get-OutlookEvents -Hours $eventLogHoursValue)
 }
 
 $json = $diagnostics | ConvertTo-Json -Depth 8
