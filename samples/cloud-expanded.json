@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "collectedAt": "2026-05-07T12:30:00.000Z",
+  "targetUserPrincipalName": "alex@contoso.com",
+  "exchangeOnline": {
+    "collectedAt": "2026-05-07T12:28:00.000Z",
+    "collectorVersion": "0.1.0",
+    "errors": [],
+    "mailboxFound": true,
+    "primarySmtpAddress": "alex@contoso.com",
+    "displayName": "Alex Wilber",
+    "recipientTypeDetails": "UserMailbox",
+    "accountDisabled": false,
+    "litigationHoldEnabled": false,
+    "archiveStatus": "Active",
+    "forwardingSmtpAddress": "smtp:external@example.com",
+    "forwardingAddress": null,
+    "deliverToMailboxAndForward": true,
+    "hiddenFromAddressListsEnabled": false,
+    "retentionPolicy": "Default MRM Policy",
+    "roleAssignmentPolicy": "Default Role Assignment Policy",
+    "owaMailboxPolicy": "OwaMailboxPolicy-Default",
+    "issueWarningQuota": "98 GB (105,226,698,752 bytes)",
+    "prohibitSendQuota": "99 GB (106,300,440,576 bytes)",
+    "prohibitSendReceiveQuota": "100 GB (107,374,182,400 bytes)",
+    "totalItemSize": "96 GB (103,079,215,104 bytes)",
+    "totalItemSizeBytes": 103079215104,
+    "quotaUsedPercent": 96,
+    "itemCount": 420000,
+    "deletedItemCount": 85000,
+    "totalDeletedItemSize": "12 GB (12,884,901,888 bytes)",
+    "lastLogonTime": "2026-05-07T11:00:00.000Z",
+    "mailboxPermissionSummary": {
+      "fullAccessDelegates": ["helpdesk1@contoso.com", "manager@contoso.com"],
+      "nonInheritedPermissionCount": 2
+    },
+    "cas": {
+      "owaEnabled": true,
+      "mapiEnabled": false,
+      "imapEnabled": false,
+      "popEnabled": false,
+      "activeSyncEnabled": true,
+      "smtpClientAuthenticationDisabled": true,
+      "ewsEnabled": true
+    }
+  },
+  "graph": {
+    "collectedAt": "2026-05-07T12:29:00.000Z",
+    "collectorVersion": "0.1.0",
+    "errors": [],
+    "signedInUserPrincipalName": "tech@contoso.com",
+    "targetUserPrincipalName": "alex@contoso.com",
+    "mailboxSettingsAvailable": true,
+    "mailboxSettings": {
+      "timeZone": "Eastern Standard Time",
+      "dateFormat": "M/d/yyyy",
+      "timeFormat": "h:mm tt",
+      "workingHoursTimeZone": "Eastern Standard Time",
+      "automaticRepliesStatus": "disabled"
+    },
+    "folderCount": 188,
+    "hiddenFolderCount": 31,
+    "largestFolders": [
+      {
+        "displayName": "Inbox",
+        "totalItemCount": 140000,
+        "unreadItemCount": 1200,
+        "childFolderCount": 42,
+        "isHidden": false
+      }
+    ],
+    "inboxRuleCount": 112,
+    "enabledInboxRuleCount": 96,
+    "forwardingRuleCount": 1,
+    "suspiciousRules": [
+      {
+        "displayName": "Forward all invoices",
+        "isEnabled": true,
+        "sequence": 4,
+        "hasForwardingAction": true,
+        "hasDeleteOrMoveAction": false,
+        "forwardTo": ["external@example.com"],
+        "redirectTo": [],
+        "moveToFolder": null
+      }
+    ]
+  }
+}

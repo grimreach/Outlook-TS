@@ -14,6 +14,16 @@ Outlook-TS is a Microsoft 365 Outlook troubleshooting toolkit. The first version
 - Analyzes the collector JSON with a TypeScript CLI.
 - Produces actionable findings with severity, evidence, and repair guidance.
 - Includes a conservative repair script for forcing classic Outlook launch behavior.
+- Collects optional cloud evidence from Exchange Online PowerShell:
+  - Mailbox existence and recipient type.
+  - CAS flags such as OWA, MAPI, EWS, IMAP, POP, ActiveSync.
+  - Mailbox size, item counts, deleted item counts, and quota percent.
+  - Mailbox-level forwarding.
+  - Optional FullAccess delegate summary.
+- Collects optional Microsoft Graph evidence:
+  - Mailbox settings availability.
+  - Mail folder count, hidden folder count, and largest folders.
+  - Inbox rule count and forwarding/delete/move rule summaries.
 
 ## Why This First
 
@@ -32,6 +42,7 @@ Run the sample diagnosis:
 
 ```bash
 npm run diagnose:sample
+npm run diagnose:cloud-sample
 ```
 
 On the affected Windows user profile, collect diagnostics:
@@ -45,6 +56,27 @@ Analyze the result:
 
 ```bash
 node dist/index.js diagnose --input outlook-diagnostics.json
+```
+
+Collect Exchange Online diagnostics:
+
+```powershell
+Install-Module ExchangeOnlineManagement -Scope CurrentUser
+.\scripts\Collect-ExchangeOnlineDiagnostics.ps1 -Identity user@contoso.com -Connect -IncludeMailboxPermissions
+```
+
+Collect Microsoft Graph diagnostics:
+
+```powershell
+Install-Module Microsoft.Graph -Scope CurrentUser
+.\scripts\Collect-GraphDiagnostics.ps1 -UserId user@contoso.com -Connect -IncludeHiddenFolders
+```
+
+Merge local, Exchange Online, and Graph output into one diagnostic bundle:
+
+```powershell
+.\scripts\Merge-Diagnostics.ps1 -InputPath .\outlook-diagnostics.json, .\exchange-diagnostics.json, .\graph-diagnostics.json -OutputPath .\combined.json
+node .\dist\index.js diagnose --input .\combined.json --markdown .\report.md
 ```
 
 Force classic Outlook launch behavior for the signed-in Windows user:
@@ -61,6 +93,8 @@ The local collector should stay useful without tenant admin rights. Tenant-side 
 - Microsoft Graph for mailbox folder/rule/calendar/delegation observations that fit Graph permissions.
 
 Use least-privilege permissions. For a helpdesk workflow, prefer delegated sign-in for the affected user or scoped admin consent over broad application permissions.
+
+The initial cloud collectors use Microsoft-supported PowerShell modules instead of a custom app registration. That keeps v1 practical for techs. A dedicated app with Graph auth can come later if we want a GUI, saved tenant profiles, or packaged reports.
 
 ## Useful Official References
 

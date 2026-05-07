@@ -39,25 +39,27 @@ export function evaluateDiagnostics(input: OutlookDiagnostics): Finding[] {
     });
   }
 
-  const profileCount = input.classicOutlook?.profileCount ?? input.classicOutlook?.profiles?.length ?? 0;
-  if (profileCount === 0) {
-    findings.push({
-      id: "classic-profile-missing",
-      severity: "critical",
-      title: "No classic Outlook profile was detected",
-      evidence: ["The classic Outlook profile registry path did not contain any profiles."],
-      recommendation:
-        "Create a fresh classic Outlook profile after confirming Microsoft 365 sign-in and Autodiscover are healthy."
-    });
-  } else if (!input.classicOutlook?.defaultProfile) {
-    findings.push({
-      id: "classic-default-profile-missing",
-      severity: "warning",
-      title: "Classic Outlook profiles exist but no default profile was detected",
-      evidence: [`Detected ${profileCount} classic Outlook profile(s).`, "DefaultProfile was empty or missing."],
-      recommendation:
-        "Set a default profile in Mail control panel or create a new clean profile and make it the default."
-    });
+  if (input.classicOutlook) {
+    const profileCount = input.classicOutlook.profileCount ?? input.classicOutlook.profiles?.length ?? 0;
+    if (profileCount === 0) {
+      findings.push({
+        id: "classic-profile-missing",
+        severity: "critical",
+        title: "No classic Outlook profile was detected",
+        evidence: ["The classic Outlook profile registry path did not contain any profiles."],
+        recommendation:
+          "Create a fresh classic Outlook profile after confirming Microsoft 365 sign-in and Autodiscover are healthy."
+      });
+    } else if (!input.classicOutlook.defaultProfile) {
+      findings.push({
+        id: "classic-default-profile-missing",
+        severity: "warning",
+        title: "Classic Outlook profiles exist but no default profile was detected",
+        evidence: [`Detected ${profileCount} classic Outlook profile(s).`, "DefaultProfile was empty or missing."],
+        recommendation:
+          "Set a default profile in Mail control panel or create a new clean profile and make it the default."
+      });
+    }
   }
 
   for (const addin of input.addins ?? []) {
@@ -106,6 +108,14 @@ export function evaluateDiagnostics(input: OutlookDiagnostics): Finding[] {
     });
   }
 
+  if (input.exchangeOnline) {
+    findings.push(...evaluateExchangeOnline(input));
+  }
+
+  if (input.graph) {
+    findings.push(...evaluateGraph(input));
+  }
+
   if (findings.length === 0) {
     findings.push({
       id: "no-blockers-detected",
@@ -114,6 +124,192 @@ export function evaluateDiagnostics(input: OutlookDiagnostics): Finding[] {
       evidence: ["The supplied diagnostics did not match the current rule set."],
       recommendation:
         "Add Exchange Online and Graph collection for this user, then retest classic Outlook safe mode and a fresh profile."
+    });
+  }
+
+  return findings;
+}
+
+function evaluateExchangeOnline(input: OutlookDiagnostics): Finding[] {
+  const findings: Finding[] = [];
+  const exchange = input.exchangeOnline;
+  if (!exchange) {
+    return findings;
+  }
+
+  for (const error of exchange.errors ?? []) {
+    findings.push({
+      id: "exchange-collector-error",
+      severity: "warning",
+      title: "Exchange Online collector reported an error",
+      evidence: [error],
+      recommendation:
+        "Review the Exchange Online collector permissions, module installation, and target mailbox identity."
+    });
+  }
+
+  if (exchange.mailboxFound === false) {
+    findings.push({
+      id: "exchange-mailbox-not-found",
+      severity: "critical",
+      title: "Exchange Online mailbox was not found",
+      evidence: [`Target: ${input.targetUserPrincipalName ?? exchange.primarySmtpAddress ?? "unknown"}`],
+      recommendation:
+        "Confirm the user has an Exchange Online mailbox and that the collector was run against the correct tenant."
+    });
+    return findings;
+  }
+
+  if (exchange.cas?.mapiEnabled === false) {
+    findings.push({
+      id: "mapi-disabled",
+      severity: "critical",
+      title: "MAPI is disabled for the mailbox",
+      evidence: ["Exchange Online CAS setting MapiEnabled is false."],
+      recommendation:
+        "Enable MAPI for the mailbox if classic Outlook for Windows is expected to connect."
+    });
+  }
+
+  if (exchange.cas?.ewsEnabled === false) {
+    findings.push({
+      id: "ews-disabled",
+      severity: "warning",
+      title: "EWS is disabled for the mailbox",
+      evidence: ["Exchange Online CAS setting EwsEnabled is false."],
+      recommendation:
+        "Confirm this is intentional. Some Outlook features and add-ins still depend on EWS-backed service access."
+    });
+  }
+
+  if (exchange.quotaUsedPercent !== null && exchange.quotaUsedPercent !== undefined && exchange.quotaUsedPercent >= 95) {
+    findings.push({
+      id: "mailbox-quota-critical",
+      severity: "critical",
+      title: "Mailbox is at or above 95% of send/receive quota",
+      evidence: [
+        `Quota used: ${exchange.quotaUsedPercent.toFixed(1)}%`,
+        `Total item size: ${exchange.totalItemSize ?? "unknown"}`,
+        `Prohibit send/receive quota: ${exchange.prohibitSendReceiveQuota ?? exchange.prohibitSendQuota ?? "unknown"}`
+      ],
+      recommendation:
+        "Reduce mailbox size, enable or expand archive, or adjust quota before troubleshooting client sync behavior."
+    });
+  } else if (exchange.quotaUsedPercent !== null && exchange.quotaUsedPercent !== undefined && exchange.quotaUsedPercent >= 85) {
+    findings.push({
+      id: "mailbox-quota-warning",
+      severity: "warning",
+      title: "Mailbox is approaching quota",
+      evidence: [
+        `Quota used: ${exchange.quotaUsedPercent.toFixed(1)}%`,
+        `Total item size: ${exchange.totalItemSize ?? "unknown"}`
+      ],
+      recommendation:
+        "Treat mailbox size as a possible contributor to sync and performance symptoms."
+    });
+  }
+
+  if (exchange.forwardingSmtpAddress || exchange.forwardingAddress) {
+    findings.push({
+      id: "mailbox-forwarding-enabled",
+      severity: "warning",
+      title: "Mailbox-level forwarding is enabled",
+      evidence: [
+        `ForwardingSmtpAddress=${exchange.forwardingSmtpAddress ?? "not set"}`,
+        `ForwardingAddress=${exchange.forwardingAddress ?? "not set"}`,
+        `DeliverToMailboxAndForward=${exchange.deliverToMailboxAndForward ?? "unknown"}`
+      ],
+      recommendation:
+        "Verify forwarding is expected. Unexpected forwarding can look like missing mail or inconsistent mailbox behavior."
+    });
+  }
+
+  const delegateCount = exchange.mailboxPermissionSummary?.nonInheritedPermissionCount ?? 0;
+  if (delegateCount > 10) {
+    findings.push({
+      id: "many-full-access-delegates",
+      severity: "warning",
+      title: "Mailbox has many explicit FullAccess permissions",
+      evidence: [
+        `Explicit delegate count: ${delegateCount}`,
+        `Sample: ${(exchange.mailboxPermissionSummary?.fullAccessDelegates ?? []).slice(0, 5).join(", ") || "none"}`
+      ],
+      recommendation:
+        "Review mailbox delegation. Large or stale delegate sets can complicate automapping and shared mailbox behavior."
+    });
+  }
+
+  return findings;
+}
+
+function evaluateGraph(input: OutlookDiagnostics): Finding[] {
+  const findings: Finding[] = [];
+  const graph = input.graph;
+  if (!graph) {
+    return findings;
+  }
+
+  for (const error of graph.errors ?? []) {
+    findings.push({
+      id: "graph-collector-error",
+      severity: "warning",
+      title: "Microsoft Graph collector reported an error",
+      evidence: [error],
+      recommendation:
+        "Review Graph PowerShell installation, delegated scopes, admin consent, and target mailbox access."
+    });
+  }
+
+  if (graph.mailboxSettingsAvailable === false) {
+    findings.push({
+      id: "graph-mailbox-settings-unavailable",
+      severity: "warning",
+      title: "Graph could not read mailbox settings",
+      evidence: [`Target: ${graph.targetUserPrincipalName ?? input.targetUserPrincipalName ?? "unknown"}`],
+      recommendation:
+        "Confirm the signed-in account has access and Graph has MailboxSettings.Read or an equivalent approved permission."
+    });
+  }
+
+  if ((graph.hiddenFolderCount ?? 0) >= 20) {
+    findings.push({
+      id: "many-hidden-mail-folders",
+      severity: "warning",
+      title: "Mailbox has many hidden folders",
+      evidence: [
+        `Hidden folders: ${graph.hiddenFolderCount}`,
+        `Total folders sampled: ${graph.folderCount ?? "unknown"}`
+      ],
+      recommendation:
+        "Review hidden/system folder growth. Large hidden folder counts can point to stale client, rule, or sync state."
+    });
+  }
+
+  if ((graph.forwardingRuleCount ?? 0) > 0) {
+    findings.push({
+      id: "inbox-forwarding-rules",
+      severity: "warning",
+      title: "Inbox rules include forwarding or redirect actions",
+      evidence: (graph.suspiciousRules ?? [])
+        .filter((rule) => rule.hasForwardingAction)
+        .slice(0, 5)
+        .map((rule) => `${rule.displayName ?? "unnamed rule"} forwards or redirects mail`),
+      recommendation:
+        "Verify every forwarding or redirect rule with the user. Unexpected rules are a common cause of missing mail."
+    });
+  }
+
+  if ((graph.inboxRuleCount ?? 0) >= 100) {
+    findings.push({
+      id: "many-inbox-rules",
+      severity: "warning",
+      title: "Mailbox has a large number of inbox rules",
+      evidence: [
+        `Inbox rules: ${graph.inboxRuleCount}`,
+        `Enabled rules: ${graph.enabledInboxRuleCount ?? "unknown"}`
+      ],
+      recommendation:
+        "Review and simplify inbox rules before treating the issue as purely client-side."
     });
   }
 

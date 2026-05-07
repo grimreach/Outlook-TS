@@ -1,6 +1,9 @@
 dist/
 node_modules/
+.DS_Store
 *.log
 *.tmp
 outlook-diagnostics.json
+exchange-diagnostics.json
+graph-diagnostics.json
 report.md

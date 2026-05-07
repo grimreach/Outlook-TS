@@ -2,8 +2,10 @@ export type Severity = "info" | "warning" | "critical";
 
 export interface OutlookDiagnostics {
   collectedAt: string;
+  schemaVersion?: number;
   computerName?: string;
   userName?: string;
+  targetUserPrincipalName?: string;
   os?: {
     caption?: string;
     version?: string;
@@ -53,31 +55,88 @@ export interface EventLogEntry {
 }
 
 export interface ExchangeOnlineDiagnostics {
+  collectedAt?: string;
+  collectorVersion?: string;
+  errors?: string[];
   mailboxFound?: boolean;
   primarySmtpAddress?: string;
+  displayName?: string;
   recipientTypeDetails?: string;
+  accountDisabled?: boolean;
   litigationHoldEnabled?: boolean;
   archiveStatus?: string;
+  forwardingSmtpAddress?: string | null;
+  forwardingAddress?: string | null;
+  deliverToMailboxAndForward?: boolean;
+  hiddenFromAddressListsEnabled?: boolean;
+  retentionPolicy?: string | null;
+  roleAssignmentPolicy?: string | null;
+  owaMailboxPolicy?: string | null;
   issueWarningQuota?: string;
   prohibitSendQuota?: string;
+  prohibitSendReceiveQuota?: string;
   totalItemSize?: string;
+  totalItemSizeBytes?: number | null;
+  quotaUsedPercent?: number | null;
   itemCount?: number;
+  deletedItemCount?: number;
+  totalDeletedItemSize?: string;
   lastLogonTime?: string;
+  mailboxPermissionSummary?: {
+    fullAccessDelegates?: string[];
+    nonInheritedPermissionCount?: number;
+  };
   cas?: {
     owaEnabled?: boolean;
     mapiEnabled?: boolean;
     imapEnabled?: boolean;
     popEnabled?: boolean;
     activeSyncEnabled?: boolean;
+    smtpClientAuthenticationDisabled?: boolean;
+    ewsEnabled?: boolean;
   };
 }
 
 export interface GraphDiagnostics {
+  collectedAt?: string;
+  collectorVersion?: string;
+  errors?: string[];
   signedInUserPrincipalName?: string;
+  targetUserPrincipalName?: string;
   mailboxSettingsAvailable?: boolean;
+  mailboxSettings?: {
+    timeZone?: string;
+    dateFormat?: string;
+    timeFormat?: string;
+    workingHoursTimeZone?: string;
+    automaticRepliesStatus?: string;
+  };
   folderCount?: number;
   hiddenFolderCount?: number;
+  largestFolders?: MailFolderSummary[];
   inboxRuleCount?: number;
+  enabledInboxRuleCount?: number;
+  forwardingRuleCount?: number;
+  suspiciousRules?: MessageRuleSummary[];
+}
+
+export interface MailFolderSummary {
+  displayName?: string;
+  totalItemCount?: number;
+  unreadItemCount?: number;
+  childFolderCount?: number;
+  isHidden?: boolean;
+}
+
+export interface MessageRuleSummary {
+  displayName?: string;
+  isEnabled?: boolean;
+  sequence?: number;
+  hasForwardingAction?: boolean;
+  hasDeleteOrMoveAction?: boolean;
+  forwardTo?: string[];
+  redirectTo?: string[];
+  moveToFolder?: string | null;
 }
 
 export interface Finding {

@@ -30,6 +30,14 @@ Future collectors can add `exchangeOnline` and `graph` sections to the same JSON
 - Exchange Online PowerShell: mailbox existence, CAS flags, mailbox statistics, policy assignment, shared mailbox access, archive/quota.
 - Microsoft Graph: mailbox settings, folder visibility, rules, calendar settings, delegated/shared mailbox access where permissions allow.
 
+The first Microsoft 365 collectors are now PowerShell-based:
+
+- `scripts/Collect-ExchangeOnlineDiagnostics.ps1`
+- `scripts/Collect-GraphDiagnostics.ps1`
+- `scripts/Merge-Diagnostics.ps1`
+
+This lets Windows techs collect tenant-side evidence without waiting for a packaged desktop app or custom Entra ID app registration.
+
 ## Classic/New Outlook Issue Model
 
 The first known incident pattern is:
@@ -56,3 +64,17 @@ The v1 tool checks:
 - Detect add-ins that commonly break classic Outlook startup.
 - Detect oversized mailbox, archive, or folder count risk from Exchange Online.
 - Detect inbox rules, forwarding, or hidden folders from Graph where permissions allow.
+
+## Current Cloud Rules
+
+- Missing Exchange Online mailbox.
+- OWA disabled.
+- MAPI disabled for classic Outlook.
+- EWS disabled.
+- Mailbox at or above 85% and 95% quota thresholds.
+- Mailbox-level forwarding.
+- Many explicit FullAccess delegates.
+- Graph mailbox settings unavailable.
+- Many hidden folders.
+- Forwarding or redirect inbox rules.
+- Large inbox rule counts.

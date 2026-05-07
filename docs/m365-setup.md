@@ -19,6 +19,14 @@ Get-CASMailbox -Identity user@contoso.com
 
 These results can be normalized into the `exchangeOnline` section of the diagnostics JSON.
 
+The current collector wraps these checks:
+
+```powershell
+.\scripts\Collect-ExchangeOnlineDiagnostics.ps1 -Identity user@contoso.com -Connect -IncludeMailboxPermissions
+```
+
+If already connected to Exchange Online, omit `-Connect`.
+
 ## Microsoft Graph Lane
 
 Start with delegated permissions where possible:
@@ -37,6 +45,25 @@ Potential checks:
 - Inbox rule count and suspicious forwarding rules.
 - Calendar settings and time zone.
 - Shared/delegated folder visibility.
+
+The current collector uses Microsoft Graph PowerShell:
+
+```powershell
+Install-Module Microsoft.Graph -Scope CurrentUser
+.\scripts\Collect-GraphDiagnostics.ps1 -UserId user@contoso.com -Connect -IncludeHiddenFolders
+```
+
+If already connected to Graph with the right scopes, omit `-Connect`.
+
+## Combined Report Flow
+
+```powershell
+.\scripts\Collect-OutlookDiagnostics.ps1 -OutputPath .\outlook-diagnostics.json
+.\scripts\Collect-ExchangeOnlineDiagnostics.ps1 -Identity user@contoso.com -Connect -IncludeMailboxPermissions
+.\scripts\Collect-GraphDiagnostics.ps1 -UserId user@contoso.com -Connect -IncludeHiddenFolders
+.\scripts\Merge-Diagnostics.ps1 -InputPath .\outlook-diagnostics.json, .\exchange-diagnostics.json, .\graph-diagnostics.json -OutputPath .\combined.json
+node .\dist\index.js diagnose --input .\combined.json --markdown .\report.md
+```
 
 ## App Registration Shape
 
