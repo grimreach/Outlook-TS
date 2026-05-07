@@ -9,6 +9,15 @@ Install-Module ExchangeOnlineManagement -Scope CurrentUser
 Connect-ExchangeOnline
 ```
 
+Install the Graph submodules used by the collector:
+
+```powershell
+Install-Module Microsoft.Graph.Authentication -Scope CurrentUser -Force
+Install-Module Microsoft.Graph.Users -Scope CurrentUser -Force
+Install-Module Microsoft.Graph.Mail -Scope CurrentUser -Force
+Install-Module Microsoft.Graph.Calendar -Scope CurrentUser -Force
+```
+
 Useful future collection commands:
 
 ```powershell

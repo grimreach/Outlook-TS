@@ -77,7 +77,7 @@ $calendarFolderSettings = $null
 $calendarFolderPermissions = @()
 
 try {
-    $mailbox = Get-EXOMailbox -Identity $Identity -Properties DisplayName,PrimarySmtpAddress,RecipientTypeDetails,AccountDisabled,LitigationHoldEnabled,ArchiveStatus,ForwardingSmtpAddress,ForwardingAddress,DeliverToMailboxAndForward,HiddenFromAddressListsEnabled,RetentionPolicy,RoleAssignmentPolicy,OWAMailboxPolicy,IssueWarningQuota,ProhibitSendQuota,ProhibitSendReceiveQuota -ErrorAction Stop
+        $mailbox = Get-EXOMailbox -Identity $Identity -Properties DisplayName,PrimarySmtpAddress,RecipientTypeDetails,AccountDisabled,LitigationHoldEnabled,ArchiveStatus,ForwardingSmtpAddress,ForwardingAddress,DeliverToMailboxAndForward,HiddenFromAddressListsEnabled,RetentionPolicy,RoleAssignmentPolicy,IssueWarningQuota,ProhibitSendQuota,ProhibitSendReceiveQuota -ErrorAction Stop
 }
 catch {
     Add-CollectorError "Get-EXOMailbox failed for '$Identity': $($_.Exception.Message)"
@@ -196,7 +196,7 @@ $diagnostics = [ordered]@{
         hiddenFromAddressListsEnabled = if ($mailbox) { $mailbox.HiddenFromAddressListsEnabled } else { $null }
         retentionPolicy = if ($mailbox -and $mailbox.RetentionPolicy) { $mailbox.RetentionPolicy.ToString() } else { $null }
         roleAssignmentPolicy = if ($mailbox -and $mailbox.RoleAssignmentPolicy) { $mailbox.RoleAssignmentPolicy.ToString() } else { $null }
-        owaMailboxPolicy = if ($mailbox -and $mailbox.OWAMailboxPolicy) { $mailbox.OWAMailboxPolicy.ToString() } else { $null }
+        owaMailboxPolicy = $null
         issueWarningQuota = if ($issueWarningQuota) { $issueWarningQuota.ToString() } else { $null }
         prohibitSendQuota = if ($prohibitSendQuota) { $prohibitSendQuota.ToString() } else { $null }
         prohibitSendReceiveQuota = if ($prohibitSendReceiveQuota) { $prohibitSendReceiveQuota.ToString() } else { $null }
