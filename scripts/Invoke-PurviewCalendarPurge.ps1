@@ -77,7 +77,13 @@ Import-Module ExchangeOnlineManagement
 
 if ($Connect) {
     Connect-ExchangeOnline -ShowBanner:$false
-    Connect-IPPSSession
+    try {
+        Connect-IPPSSession -EnableSearchOnlySession
+    }
+    catch {
+        Write-Warning "Connect-IPPSSession -EnableSearchOnlySession failed. Falling back to Connect-IPPSSession. If compliance search fails, update ExchangeOnlineManagement to v3.9.0 or higher."
+        Connect-IPPSSession
+    }
 }
 
 $cutoff = (Get-Date).AddYears(-1 * $OlderThanYears).Date
@@ -112,7 +118,12 @@ if ($PSCmdlet.ShouldProcess($SearchName, "Create targeted Purview compliance sea
 }
 
 Write-Host "Starting compliance search..." -ForegroundColor Cyan
-Start-ComplianceSearch -Identity $SearchName
+try {
+    Start-ComplianceSearch -Identity $SearchName -ErrorAction Stop
+}
+catch {
+    throw "Start-ComplianceSearch failed for '$SearchName': $($_.Exception.Message)"
+}
 $search = Wait-ComplianceSearchComplete -Identity $SearchName
 
 if ($search.Status -ne "Completed") {
@@ -153,7 +164,12 @@ do {
     }
 
     Write-Host "Refreshing search count..." -ForegroundColor Cyan
-    Start-ComplianceSearch -Identity $SearchName
+    try {
+        Start-ComplianceSearch -Identity $SearchName -ErrorAction Stop
+    }
+    catch {
+        throw "Start-ComplianceSearch refresh failed for '$SearchName': $($_.Exception.Message)"
+    }
     $search = Wait-ComplianceSearchComplete -Identity $SearchName
     $remainingItems = [int]$search.Items
     Write-Host "Remaining matching items: $remainingItems" -ForegroundColor Yellow
