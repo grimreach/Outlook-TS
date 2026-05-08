@@ -77,7 +77,7 @@ $calendarFolderSettings = $null
 $calendarFolderPermissions = @()
 
 try {
-        $mailbox = Get-EXOMailbox -Identity $Identity -Properties DisplayName,PrimarySmtpAddress,RecipientTypeDetails,AccountDisabled,LitigationHoldEnabled,ArchiveStatus,ForwardingSmtpAddress,ForwardingAddress,DeliverToMailboxAndForward,HiddenFromAddressListsEnabled,RetentionPolicy,RoleAssignmentPolicy,IssueWarningQuota,ProhibitSendQuota,ProhibitSendReceiveQuota -ErrorAction Stop
+        $mailbox = Get-EXOMailbox -Identity $Identity -Properties DisplayName,PrimarySmtpAddress,RecipientTypeDetails,AccountDisabled,LitigationHoldEnabled,ArchiveStatus,ArchiveState,AutoExpandingArchiveEnabled,ForwardingSmtpAddress,ForwardingAddress,DeliverToMailboxAndForward,HiddenFromAddressListsEnabled,RetentionPolicy,RoleAssignmentPolicy,IssueWarningQuota,ProhibitSendQuota,ProhibitSendReceiveQuota -ErrorAction Stop
 }
 catch {
     Add-CollectorError "Get-EXOMailbox failed for '$Identity': $($_.Exception.Message)"
@@ -190,6 +190,8 @@ $diagnostics = [ordered]@{
         accountDisabled = if ($mailbox) { $mailbox.AccountDisabled } else { $null }
         litigationHoldEnabled = if ($mailbox) { $mailbox.LitigationHoldEnabled } else { $null }
         archiveStatus = if ($mailbox) { $mailbox.ArchiveStatus.ToString() } else { $null }
+        archiveState = if ($mailbox -and $mailbox.ArchiveState) { $mailbox.ArchiveState.ToString() } else { $null }
+        autoExpandingArchiveEnabled = if ($mailbox) { $mailbox.AutoExpandingArchiveEnabled } else { $null }
         forwardingSmtpAddress = if ($mailbox -and $mailbox.ForwardingSmtpAddress) { $mailbox.ForwardingSmtpAddress.ToString() } else { $null }
         forwardingAddress = if ($mailbox -and $mailbox.ForwardingAddress) { $mailbox.ForwardingAddress.ToString() } else { $null }
         deliverToMailboxAndForward = if ($mailbox) { $mailbox.DeliverToMailboxAndForward } else { $null }

@@ -65,6 +65,8 @@ export interface ExchangeOnlineDiagnostics {
   accountDisabled?: boolean;
   litigationHoldEnabled?: boolean;
   archiveStatus?: string;
+  archiveState?: string | null;
+  autoExpandingArchiveEnabled?: boolean | null;
   forwardingSmtpAddress?: string | null;
   forwardingAddress?: string | null;
   deliverToMailboxAndForward?: boolean;

@@ -224,6 +224,32 @@ function evaluateExchangeOnline(input: OutlookDiagnostics): Finding[] {
     });
   }
 
+  const archiveStatus = exchange.archiveStatus?.toLowerCase();
+  if (archiveStatus && archiveStatus !== "active") {
+    findings.push({
+      id: "archive-mailbox-not-active",
+      severity: "warning",
+      title: "Archive mailbox is not active",
+      evidence: [
+        `ArchiveStatus=${exchange.archiveStatus}`,
+        `ArchiveState=${exchange.archiveState ?? "unknown"}`
+      ],
+      recommendation:
+        "Enable the archive mailbox for users with large mailbox or calendar workloads, especially when Outlook/OWA calendar edit behavior is failing."
+    });
+  }
+
+  if (exchange.autoExpandingArchiveEnabled === false) {
+    findings.push({
+      id: "auto-expanding-archive-disabled",
+      severity: "warning",
+      title: "Auto-expanding archive is disabled",
+      evidence: ["AutoExpandingArchiveEnabled=false"],
+      recommendation:
+        "Consider enabling auto-expanding archive when Microsoft identifies calendar or mailbox capacity pressure."
+    });
+  }
+
   const delegateCount = exchange.mailboxPermissionSummary?.nonInheritedPermissionCount ?? 0;
   if (delegateCount > 10) {
     findings.push({
@@ -252,6 +278,41 @@ function evaluateExchangeCalendar(input: OutlookDiagnostics): Finding[] {
   }
 
   const calendarFolders = exchange.calendarFolders ?? [];
+  const totalCalendarItems = calendarFolders.reduce((sum, folder) => {
+    return sum + (folder.itemsInFolderAndSubfolders ?? folder.itemsInFolder ?? 0);
+  }, 0);
+  const largestCalendar = [...calendarFolders].sort((left, right) => {
+    return (right.itemsInFolderAndSubfolders ?? right.itemsInFolder ?? 0) - (left.itemsInFolderAndSubfolders ?? left.itemsInFolder ?? 0);
+  })[0];
+
+  if (totalCalendarItems >= 7000) {
+    findings.push({
+      id: "calendar-item-count-capacity-risk",
+      severity: "critical",
+      title: "Calendar folders contain a high number of items",
+      evidence: [
+        `Total calendar items across calendar folders: ${totalCalendarItems}`,
+        `Largest calendar folder: ${largestCalendar?.folderPath ?? largestCalendar?.name ?? "unknown"} (${largestCalendar ? largestCalendar.itemsInFolderAndSubfolders ?? largestCalendar.itemsInFolder ?? 0 : "unknown"} item(s))`,
+        `ArchiveStatus=${exchange.archiveStatus ?? "unknown"}`,
+        `AutoExpandingArchiveEnabled=${exchange.autoExpandingArchiveEnabled ?? "unknown"}`
+      ],
+      recommendation:
+        "Treat this as calendar capacity risk. If OWA/new Outlook can create but not edit/save calendar items, confirm archive and auto-expanding archive are enabled with Enable-Mailbox -Archive and Enable-Mailbox -AutoExpandingArchive."
+    });
+  } else if (totalCalendarItems >= 4000) {
+    findings.push({
+      id: "calendar-item-count-warning",
+      severity: "warning",
+      title: "Calendar folders contain many items",
+      evidence: [
+        `Total calendar items across calendar folders: ${totalCalendarItems}`,
+        `Largest calendar folder: ${largestCalendar?.folderPath ?? largestCalendar?.name ?? "unknown"} (${largestCalendar ? largestCalendar.itemsInFolderAndSubfolders ?? largestCalendar.itemsInFolder ?? 0 : "unknown"} item(s))`
+      ],
+      recommendation:
+        "Monitor for calendar edit/sync symptoms and consider archive/retention review before this becomes a service-impacting calendar workload."
+    });
+  }
+
   if (calendarFolders.length >= 25) {
     findings.push({
       id: "exchange-many-calendar-folders",

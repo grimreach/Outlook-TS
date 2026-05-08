@@ -13,6 +13,8 @@
     "accountDisabled": false,
     "litigationHoldEnabled": false,
     "archiveStatus": "Active",
+    "archiveState": "Local",
+    "autoExpandingArchiveEnabled": false,
     "forwardingSmtpAddress": "smtp:external@example.com",
     "forwardingAddress": null,
     "deliverToMailboxAndForward": true,
@@ -39,12 +41,12 @@
         "name": "Calendar",
         "folderPath": "/Calendar",
         "folderType": "Calendar",
-        "itemsInFolder": 0,
-        "itemsInFolderAndSubfolders": 0,
-        "folderSize": "0 B (0 bytes)",
-        "folderAndSubfolderSize": "0 B (0 bytes)",
-        "oldestItemReceivedDate": null,
-        "newestItemReceivedDate": null
+        "itemsInFolder": 3279,
+        "itemsInFolderAndSubfolders": 7241,
+        "folderSize": "180 MB (188,743,680 bytes)",
+        "folderAndSubfolderSize": "398 MB (417,333,248 bytes)",
+        "oldestItemReceivedDate": "2022-03-05T19:11:52.000Z",
+        "newestItemReceivedDate": "2026-05-06T18:30:00.000Z"
       },
       {
         "name": "Migrated Calendar",
@@ -61,13 +63,13 @@
     "defaultCalendar": {
       "name": "Calendar",
       "folderPath": "/Calendar",
-      "folderType": "Calendar",
-      "itemsInFolder": 0,
-      "itemsInFolderAndSubfolders": 0,
-      "folderSize": "0 B (0 bytes)",
-      "folderAndSubfolderSize": "0 B (0 bytes)",
-      "oldestItemReceivedDate": null,
-      "newestItemReceivedDate": null
+        "folderType": "Calendar",
+        "itemsInFolder": 3279,
+        "itemsInFolderAndSubfolders": 7241,
+        "folderSize": "180 MB (188,743,680 bytes)",
+        "folderAndSubfolderSize": "398 MB (417,333,248 bytes)",
+        "oldestItemReceivedDate": "2022-03-05T19:11:52.000Z",
+        "newestItemReceivedDate": "2026-05-06T18:30:00.000Z"
     },
     "calendarFolderSettings": {
       "identity": "alex@contoso.com:\\Calendar",
