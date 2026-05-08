@@ -118,6 +118,18 @@ After reviewing `old-calendar-items.csv`, delete the previewed items:
 .\scripts\Remove-OldCalendarItems.ps1 -UserId user@contoso.com -Delete
 ```
 
+Preview old default-calendar items with a Purview targeted compliance search:
+
+```powershell
+.\scripts\Invoke-PurviewCalendarPurge.ps1 -Mailbox user@contoso.com -Connect -OlderThanYears 2
+```
+
+After confirming the search count is correct, purge those items:
+
+```powershell
+.\scripts\Invoke-PurviewCalendarPurge.ps1 -Mailbox user@contoso.com -OlderThanYears 2 -Purge
+```
+
 Create and assign an Exchange calendar retention policy for items older than 2 years:
 
 ```powershell

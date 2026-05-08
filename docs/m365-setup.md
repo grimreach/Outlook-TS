@@ -116,6 +116,26 @@ After review, delete the previewed non-recurring items:
   -Delete
 ```
 
+As an admin-side alternative, run a Purview targeted compliance search against the default Calendar folder. This is useful when Graph event deletion is not enough or Microsoft asks for a Purview-based purge:
+
+```powershell
+.\scripts\Invoke-PurviewCalendarPurge.ps1 `
+  -Mailbox user@contoso.com `
+  -Connect `
+  -OlderThanYears 2
+```
+
+Review the returned search count in Purview. Then run the purge loop:
+
+```powershell
+.\scripts\Invoke-PurviewCalendarPurge.ps1 `
+  -Mailbox user@contoso.com `
+  -OlderThanYears 2 `
+  -Purge
+```
+
+The script converts the mailbox Calendar `FolderId` into the hex `folderid:` value used by Purview KQL. It defaults to `HardDelete`; use `-PurgeType SoftDelete` if you want a softer first pass. Purview purge actions are intentionally batch-limited per mailbox, so the script refreshes the search and loops until the targeted query returns zero items.
+
 Create a Calendar retention tag and assign a cloned policy that preserves the mailbox's existing policy tag links:
 
 ```powershell
