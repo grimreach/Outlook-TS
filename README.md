@@ -105,6 +105,29 @@ node .\dist\index.js diagnose --input .\combined.json --markdown .\report.md
 
 You can also open the local web app and upload `combined.json`.
 
+Preview default-calendar items older than 2 years:
+
+```powershell
+Install-Module Microsoft.Graph.Authentication -Scope CurrentUser
+.\scripts\Remove-OldCalendarItems.ps1 -UserId user@contoso.com -Connect
+```
+
+After reviewing `old-calendar-items.csv`, delete the previewed items:
+
+```powershell
+.\scripts\Remove-OldCalendarItems.ps1 -UserId user@contoso.com -Delete
+```
+
+Create and assign an Exchange calendar retention policy for items older than 2 years:
+
+```powershell
+.\scripts\New-CalendarRetentionPolicy.ps1 `
+  -Identity user@contoso.com `
+  -Connect `
+  -Assign `
+  -StartManagedFolderAssistant
+```
+
 Force classic Outlook launch behavior for the signed-in Windows user:
 
 ```powershell

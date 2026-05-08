@@ -84,6 +84,52 @@ The Graph collector requests `Calendars.Read` along with mail and mailbox settin
 node .\dist\index.js diagnose --input .\combined.json --markdown .\report.md
 ```
 
+## Calendar Capacity Cleanup
+
+If Microsoft or diagnostics show calendar capacity pressure, first make sure archive is enabled:
+
+```powershell
+Enable-Mailbox user@contoso.com -Archive
+Enable-Mailbox user@contoso.com -AutoExpandingArchive
+```
+
+Preview old default-calendar items before deleting anything:
+
+```powershell
+Install-Module Microsoft.Graph.Authentication -Scope CurrentUser
+.\scripts\Remove-OldCalendarItems.ps1 `
+  -UserId user@contoso.com `
+  -Connect `
+  -OlderThanYears 2 `
+  -OutputPath .\old-calendar-items.json `
+  -CsvPath .\old-calendar-items.csv
+```
+
+Review the CSV export. The script skips recurring items by default because deleting old occurrences from active recurring meetings can be messy. To include recurring items in the preview, add `-IncludeRecurring`.
+
+After review, delete the previewed non-recurring items:
+
+```powershell
+.\scripts\Remove-OldCalendarItems.ps1 `
+  -UserId user@contoso.com `
+  -OlderThanYears 2 `
+  -Delete
+```
+
+Create a Calendar retention tag and assign a cloned policy that preserves the mailbox's existing policy tag links:
+
+```powershell
+.\scripts\New-CalendarRetentionPolicy.ps1 `
+  -Identity user@contoso.com `
+  -Connect `
+  -OlderThanDays 730 `
+  -RetentionAction DeleteAndAllowRecovery `
+  -Assign `
+  -StartManagedFolderAssistant
+```
+
+Use `-RetentionAction MoveToArchive` instead if the business prefers archive-first cleanup. Use `PermanentlyDelete` only after legal/compliance approval.
+
 ## App Registration Shape
 
 For a technician-facing desktop app or CLI:
