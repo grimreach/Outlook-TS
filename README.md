@@ -63,6 +63,13 @@ Then open:
 http://127.0.0.1:3000
 ```
 
+The local web app includes a Calendar Cleanup panel. It can run the allowlisted PowerShell scripts from the technician workstation:
+
+- Purview Preview: counts old default-calendar items.
+- Graph Preview: exports old default-calendar items to JSON/CSV.
+- Apply Retention: creates and assigns the 2-year Calendar retention policy.
+- Purview Purge: deletes Purview-matched calendar items after typing the mailbox address in the Confirm box.
+
 On the affected Windows user profile, collect diagnostics:
 
 ```powershell

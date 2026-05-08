@@ -7,6 +7,16 @@ const loadClassicSample = document.querySelector("#loadClassicSample");
 const loadCloudSample = document.querySelector("#loadCloudSample");
 const statusText = document.querySelector("#status");
 const findingsEl = document.querySelector("#findings");
+const toolMailbox = document.querySelector("#toolMailbox");
+const toolYears = document.querySelector("#toolYears");
+const toolPurgeType = document.querySelector("#toolPurgeType");
+const toolConfirm = document.querySelector("#toolConfirm");
+const toolConnect = document.querySelector("#toolConnect");
+const toolOutput = document.querySelector("#toolOutput");
+const purviewPreviewButton = document.querySelector("#purviewPreviewButton");
+const graphPreviewButton = document.querySelector("#graphPreviewButton");
+const retentionButton = document.querySelector("#retentionButton");
+const purviewPurgeButton = document.querySelector("#purviewPurgeButton");
 
 const metaCollected = document.querySelector("#metaCollected");
 const metaComputer = document.querySelector("#metaComputer");
@@ -44,6 +54,10 @@ dropzone.addEventListener("drop", async (event) => {
 });
 
 analyzeButton.addEventListener("click", analyzeCurrentJson);
+purviewPreviewButton.addEventListener("click", () => runTool("purview-preview"));
+graphPreviewButton.addEventListener("click", () => runTool("graph-preview"));
+retentionButton.addEventListener("click", () => runTool("retention-policy"));
+purviewPurgeButton.addEventListener("click", () => runTool("purview-purge"));
 
 loadClassicSample.addEventListener("click", async () => {
   await loadSample("/samples/classic-modern-toggle.json");
@@ -118,6 +132,59 @@ async function analyzeCurrentJson() {
     setStatus(error instanceof Error ? error.message : String(error), true);
   } finally {
     analyzeButton.disabled = false;
+  }
+}
+
+async function runTool(tool) {
+  const mailbox = toolMailbox.value.trim();
+  const olderThanYears = Number(toolYears.value || 2);
+  const isDangerous = tool === "purview-purge" || tool === "retention-policy";
+
+  if (!mailbox) {
+    setToolOutput("Enter a mailbox first.", true);
+    return;
+  }
+
+  if (isDangerous) {
+    const required = tool === "purview-purge" ? mailbox : "APPLY";
+    if (toolConfirm.value.trim() !== required) {
+      setToolOutput(`Confirmation required. Type ${required} in the Confirm box.`, true);
+      return;
+    }
+  }
+
+  setToolBusy(true);
+  setToolOutput("Running PowerShell tool. Complete any sign-in prompts that open...");
+
+  try {
+    const response = await fetch("/api/tools/run", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tool,
+        mailbox,
+        olderThanYears,
+        purgeType: toolPurgeType.value,
+        confirmText: toolConfirm.value.trim(),
+        connect: toolConnect.checked
+      })
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error ?? result.stderr ?? "Tool failed.");
+    }
+
+    const output = [
+      result.stdout?.trim(),
+      result.stderr?.trim() ? `STDERR:\n${result.stderr.trim()}` : "",
+      `Exit code: ${result.exitCode}`
+    ].filter(Boolean).join("\n\n");
+    setToolOutput(output || "Tool completed.");
+  } catch (error) {
+    setToolOutput(error instanceof Error ? error.message : String(error), true);
+  } finally {
+    setToolBusy(false);
   }
 }
 
@@ -208,6 +275,17 @@ function countBySeverity(findings) {
 function setStatus(message, isError = false) {
   statusText.textContent = message;
   statusText.style.color = isError ? "#c2410c" : "";
+}
+
+function setToolOutput(message, isError = false) {
+  toolOutput.textContent = message;
+  toolOutput.dataset.error = isError ? "true" : "false";
+}
+
+function setToolBusy(isBusy) {
+  for (const button of [purviewPreviewButton, graphPreviewButton, retentionButton, purviewPurgeButton]) {
+    button.disabled = isBusy;
+  }
 }
 
 function escapeHtml(value) {

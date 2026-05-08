@@ -54,6 +54,50 @@
         </aside>
 
         <section class="results" aria-live="polite">
+          <section class="toolPanel" aria-label="Admin calendar cleanup tools">
+            <div class="toolHeader">
+              <div>
+                <h2>Calendar Cleanup</h2>
+                <p>Run local PowerShell tools from this technician workstation.</p>
+              </div>
+              <label class="toggleRow">
+                <input id="toolConnect" type="checkbox" checked />
+                Connect
+              </label>
+            </div>
+
+            <div class="toolGrid">
+              <label>
+                <span>Mailbox</span>
+                <input id="toolMailbox" type="email" placeholder="user@contoso.com" />
+              </label>
+              <label>
+                <span>Older than</span>
+                <input id="toolYears" type="number" min="1" max="25" value="2" />
+              </label>
+              <label>
+                <span>Purge type</span>
+                <select id="toolPurgeType">
+                  <option>HardDelete</option>
+                  <option>SoftDelete</option>
+                </select>
+              </label>
+              <label>
+                <span>Confirm</span>
+                <input id="toolConfirm" type="text" placeholder="Mailbox or APPLY" />
+              </label>
+            </div>
+
+            <div class="toolActions">
+              <button id="purviewPreviewButton" type="button">Purview Preview</button>
+              <button id="graphPreviewButton" type="button">Graph Preview</button>
+              <button id="retentionButton" type="button">Apply Retention</button>
+              <button id="purviewPurgeButton" class="danger" type="button">Purview Purge</button>
+            </div>
+
+            <pre id="toolOutput" class="toolOutput">No tool run yet.</pre>
+          </section>
+
           <div class="summaryStrip">
             <div class="score critical">
               <span>Critical</span>

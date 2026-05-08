@@ -53,6 +53,16 @@ button:disabled {
   cursor: not-allowed;
 }
 
+select {
+  font: inherit;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0 10px;
+}
+
 .primary {
   background: var(--accent);
   border-color: var(--accent);
@@ -62,6 +72,18 @@ button:disabled {
 
 .primary:hover {
   background: var(--accent-dark);
+}
+
+.danger {
+  background: var(--critical);
+  border-color: var(--critical);
+  color: #fff;
+  font-weight: 700;
+}
+
+.danger:hover:not(:disabled) {
+  background: #9a3412;
+  border-color: #9a3412;
 }
 
 .shell {
@@ -211,6 +233,92 @@ textarea {
 
 .results {
   padding: 16px;
+}
+
+.toolPanel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdff;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.toolHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.toolHeader h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.toolHeader p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.toolGrid {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) minmax(92px, 0.6fr) minmax(140px, 1fr) minmax(160px, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.toolGrid label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.toolGrid span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.toolGrid input {
+  min-width: 0;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0 10px;
+}
+
+.toolActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.toolOutput {
+  max-height: 280px;
+  overflow: auto;
+  margin: 12px 0 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #101828;
+  color: #e4e7ec;
+  padding: 12px;
+  white-space: pre-wrap;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.toolOutput[data-error="true"] {
+  color: #fed7aa;
 }
 
 .summaryStrip {
@@ -371,6 +479,10 @@ textarea {
   .results {
     margin-top: 16px;
   }
+
+  .toolGrid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 560px) {
@@ -379,7 +491,8 @@ textarea {
   }
 
   .summaryStrip,
-  .metaGrid {
+  .metaGrid,
+  .toolGrid {
     grid-template-columns: 1fr;
   }
 
