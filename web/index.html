@@ -57,7 +57,7 @@
           <section class="toolPanel" aria-label="Admin calendar cleanup tools">
             <div class="toolHeader">
               <div>
-                <h2>Calendar Cleanup</h2>
+                <h2>Mailbox Cleanup</h2>
                 <p>Run local PowerShell tools from this technician workstation.</p>
               </div>
               <label class="toggleRow">
@@ -83,16 +83,22 @@
                 </select>
               </label>
               <label>
+                <span>Email folder</span>
+                <input id="toolFolder" type="text" placeholder="Optional" />
+              </label>
+              <label>
                 <span>Confirm</span>
                 <input id="toolConfirm" type="text" placeholder="Mailbox or APPLY" />
               </label>
             </div>
 
             <div class="toolActions">
-              <button id="purviewPreviewButton" type="button">Purview Preview</button>
+              <button id="purviewPreviewButton" type="button">Calendar Preview</button>
+              <button id="emailPreviewButton" type="button">Email Preview</button>
               <button id="graphPreviewButton" type="button">Graph Preview</button>
               <button id="retentionButton" type="button">Apply Retention</button>
-              <button id="purviewPurgeButton" class="danger" type="button">Purview Purge</button>
+              <button id="purviewPurgeButton" class="danger" type="button">Calendar Purge</button>
+              <button id="emailPurgeButton" class="danger" type="button">Email Purge</button>
             </div>
 
             <pre id="toolOutput" class="toolOutput">No tool run yet.</pre>

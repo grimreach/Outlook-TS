@@ -63,12 +63,14 @@ Then open:
 http://127.0.0.1:3000
 ```
 
-The local web app includes a Calendar Cleanup panel. It can run the allowlisted PowerShell scripts from the technician workstation:
+The local web app includes a Mailbox Cleanup panel. It can run the allowlisted PowerShell scripts from the technician workstation:
 
-- Purview Preview: counts old default-calendar items.
+- Calendar Preview: counts old default-calendar items.
+- Email Preview: counts old email items.
 - Graph Preview: exports old default-calendar items to JSON/CSV.
 - Apply Retention: creates and assigns the 2-year Calendar retention policy.
-- Purview Purge: deletes Purview-matched calendar items after typing the mailbox address in the Confirm box.
+- Calendar Purge: deletes Purview-matched calendar items after typing the mailbox address in the Confirm box.
+- Email Purge: deletes Purview-matched email items after typing the mailbox address in the Confirm box.
 
 On the affected Windows user profile, collect diagnostics:
 
@@ -135,6 +137,24 @@ After confirming the search count is correct, purge those items:
 
 ```powershell
 .\scripts\Invoke-PurviewCalendarPurge.ps1 -Mailbox user@contoso.com -OlderThanYears 2 -Purge
+```
+
+Preview email items older than 2 years with a Purview targeted compliance search:
+
+```powershell
+.\scripts\Invoke-PurviewEmailPurge.ps1 -Mailbox user@contoso.com -Connect -OlderThanYears 2
+```
+
+Optionally target a mailbox folder:
+
+```powershell
+.\scripts\Invoke-PurviewEmailPurge.ps1 -Mailbox user@contoso.com -FolderName Inbox -OlderThanYears 2
+```
+
+After confirming the search count is correct, purge those email items:
+
+```powershell
+.\scripts\Invoke-PurviewEmailPurge.ps1 -Mailbox user@contoso.com -OlderThanYears 2 -Purge
 ```
 
 Create and assign an Exchange calendar retention policy for items older than 2 years:

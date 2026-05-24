@@ -136,6 +136,35 @@ Review the returned search count in Purview. Then run the purge loop:
 
 The script converts the mailbox Calendar `FolderId` into the hex `folderid:` value used by Purview KQL. It defaults to `HardDelete`; use `-PurgeType SoftDelete` if you want a softer first pass. Purview purge actions are intentionally batch-limited per mailbox, so the script refreshes the search and loops until the targeted query returns zero items.
 
+Run a Purview targeted compliance search for old email items across the mailbox:
+
+```powershell
+.\scripts\Invoke-PurviewEmailPurge.ps1 `
+  -Mailbox user@contoso.com `
+  -Connect `
+  -OlderThanYears 2
+```
+
+Optionally target one mailbox folder, such as Inbox:
+
+```powershell
+.\scripts\Invoke-PurviewEmailPurge.ps1 `
+  -Mailbox user@contoso.com `
+  -FolderName Inbox `
+  -OlderThanYears 2
+```
+
+Review the returned search count in Purview. Then run the purge loop:
+
+```powershell
+.\scripts\Invoke-PurviewEmailPurge.ps1 `
+  -Mailbox user@contoso.com `
+  -OlderThanYears 2 `
+  -Purge
+```
+
+The email purge defaults to messages with `received` or `sent` dates older than the cutoff. Use `-DateField Received` or `-DateField Sent` when the cleanup should only target one side of the mailbox. Use `-PurgeType SoftDelete` if you want a softer first pass.
+
 Create a Calendar retention tag and assign a cloned policy that preserves the mailbox's existing policy tag links:
 
 ```powershell

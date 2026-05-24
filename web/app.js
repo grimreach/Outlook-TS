@@ -10,13 +10,16 @@ const findingsEl = document.querySelector("#findings");
 const toolMailbox = document.querySelector("#toolMailbox");
 const toolYears = document.querySelector("#toolYears");
 const toolPurgeType = document.querySelector("#toolPurgeType");
+const toolFolder = document.querySelector("#toolFolder");
 const toolConfirm = document.querySelector("#toolConfirm");
 const toolConnect = document.querySelector("#toolConnect");
 const toolOutput = document.querySelector("#toolOutput");
 const purviewPreviewButton = document.querySelector("#purviewPreviewButton");
+const emailPreviewButton = document.querySelector("#emailPreviewButton");
 const graphPreviewButton = document.querySelector("#graphPreviewButton");
 const retentionButton = document.querySelector("#retentionButton");
 const purviewPurgeButton = document.querySelector("#purviewPurgeButton");
+const emailPurgeButton = document.querySelector("#emailPurgeButton");
 
 const metaCollected = document.querySelector("#metaCollected");
 const metaComputer = document.querySelector("#metaComputer");
@@ -55,9 +58,11 @@ dropzone.addEventListener("drop", async (event) => {
 
 analyzeButton.addEventListener("click", analyzeCurrentJson);
 purviewPreviewButton.addEventListener("click", () => runTool("purview-preview"));
+emailPreviewButton.addEventListener("click", () => runTool("email-preview"));
 graphPreviewButton.addEventListener("click", () => runTool("graph-preview"));
 retentionButton.addEventListener("click", () => runTool("retention-policy"));
 purviewPurgeButton.addEventListener("click", () => runTool("purview-purge"));
+emailPurgeButton.addEventListener("click", () => runTool("email-purge"));
 
 loadClassicSample.addEventListener("click", async () => {
   await loadSample("/samples/classic-modern-toggle.json");
@@ -138,7 +143,7 @@ async function analyzeCurrentJson() {
 async function runTool(tool) {
   const mailbox = toolMailbox.value.trim();
   const olderThanYears = Number(toolYears.value || 2);
-  const isDangerous = tool === "purview-purge" || tool === "retention-policy";
+  const isDangerous = tool === "purview-purge" || tool === "email-purge" || tool === "retention-policy";
 
   if (!mailbox) {
     setToolOutput("Enter a mailbox first.", true);
@@ -165,6 +170,7 @@ async function runTool(tool) {
         mailbox,
         olderThanYears,
         purgeType: toolPurgeType.value,
+        folderName: toolFolder.value.trim(),
         confirmText: toolConfirm.value.trim(),
         connect: toolConnect.checked
       })
@@ -283,7 +289,7 @@ function setToolOutput(message, isError = false) {
 }
 
 function setToolBusy(isBusy) {
-  for (const button of [purviewPreviewButton, graphPreviewButton, retentionButton, purviewPurgeButton]) {
+  for (const button of [purviewPreviewButton, emailPreviewButton, graphPreviewButton, retentionButton, purviewPurgeButton, emailPurgeButton]) {
     button.disabled = isBusy;
   }
 }

@@ -78,6 +78,7 @@ async function handleToolRun(request: IncomingMessage, response: ServerResponse)
     purgeType?: string;
     confirmText?: string;
     connect?: boolean;
+    folderName?: string;
   };
 
   const mailbox = String(payload.mailbox ?? "").trim();
@@ -112,6 +113,21 @@ async function handleToolRun(request: IncomingMessage, response: ServerResponse)
         ...baseArgs
       ];
       break;
+    case "email-preview":
+      args = [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        join(scriptDir, "Invoke-PurviewEmailPurge.ps1"),
+        "-Mailbox",
+        mailbox,
+        "-OlderThanYears",
+        String(olderThanYears),
+        ...getOptionalFolderArgs(payload.folderName),
+        ...baseArgs
+      ];
+      break;
     case "purview-purge":
       if (payload.confirmText !== mailbox) {
         sendJson(response, 400, { error: "Type the mailbox address exactly before purging." });
@@ -130,6 +146,28 @@ async function handleToolRun(request: IncomingMessage, response: ServerResponse)
         "-Purge",
         "-PurgeType",
         payload.purgeType === "SoftDelete" ? "SoftDelete" : "HardDelete",
+        ...baseArgs
+      ];
+      break;
+    case "email-purge":
+      if (payload.confirmText !== mailbox) {
+        sendJson(response, 400, { error: "Type the mailbox address exactly before purging." });
+        return;
+      }
+      args = [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        join(scriptDir, "Invoke-PurviewEmailPurge.ps1"),
+        "-Mailbox",
+        mailbox,
+        "-OlderThanYears",
+        String(olderThanYears),
+        "-Purge",
+        "-PurgeType",
+        payload.purgeType === "SoftDelete" ? "SoftDelete" : "HardDelete",
+        ...getOptionalFolderArgs(payload.folderName),
         ...baseArgs
       ];
       break;
@@ -184,6 +222,19 @@ async function handleToolRun(request: IncomingMessage, response: ServerResponse)
   } catch (error) {
     sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) });
   }
+}
+
+function getOptionalFolderArgs(folderName: unknown): string[] {
+  const value = String(folderName ?? "").trim();
+  if (!value) {
+    return [];
+  }
+
+  if (!/^[\w .#&'()+,-]{1,128}$/.test(value)) {
+    throw new Error("Folder name contains unsupported characters.");
+  }
+
+  return ["-FolderName", value];
 }
 
 async function serveStaticFrom(baseDir: string, pathname: string, response: ServerResponse): Promise<void> {
