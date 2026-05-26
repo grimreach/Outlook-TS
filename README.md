@@ -72,6 +72,8 @@ The local web app includes a Mailbox Cleanup panel. It can run the allowlisted P
 - Calendar Purge: deletes Purview-matched calendar items after typing the mailbox address in the Confirm box.
 - Email Purge: deletes Purview-matched email items after typing the mailbox address in the Confirm box.
 
+It also includes a read-only Graph Diagnostics panel. Configure an Entra app with the setup in [docs/graph-app.md](docs/graph-app.md), then sign in from the local web UI to collect mailbox and calendar diagnostics without Graph PowerShell.
+
 On the affected Windows user profile, collect diagnostics:
 
 ```powershell

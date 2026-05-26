@@ -20,6 +20,15 @@ const graphPreviewButton = document.querySelector("#graphPreviewButton");
 const retentionButton = document.querySelector("#retentionButton");
 const purviewPurgeButton = document.querySelector("#purviewPurgeButton");
 const emailPurgeButton = document.querySelector("#emailPurgeButton");
+const graphTenantId = document.querySelector("#graphTenantId");
+const graphClientId = document.querySelector("#graphClientId");
+const graphUserId = document.querySelector("#graphUserId");
+const graphDaysBack = document.querySelector("#graphDaysBack");
+const graphDaysForward = document.querySelector("#graphDaysForward");
+const graphSignInButton = document.querySelector("#graphSignInButton");
+const graphSignOutButton = document.querySelector("#graphSignOutButton");
+const graphCollectButton = document.querySelector("#graphCollectButton");
+const graphOutput = document.querySelector("#graphOutput");
 
 const metaCollected = document.querySelector("#metaCollected");
 const metaComputer = document.querySelector("#metaComputer");
@@ -30,6 +39,7 @@ const warningCount = document.querySelector("#warningCount");
 const infoCount = document.querySelector("#infoCount");
 
 let currentMarkdown = "";
+const graphScopes = ["User.Read", "MailboxSettings.Read", "Mail.ReadBasic", "Mail.Read", "Calendars.Read"];
 
 fileInput.addEventListener("change", async () => {
   const file = fileInput.files?.[0];
@@ -63,6 +73,9 @@ graphPreviewButton.addEventListener("click", () => runTool("graph-preview"));
 retentionButton.addEventListener("click", () => runTool("retention-policy"));
 purviewPurgeButton.addEventListener("click", () => runTool("purview-purge"));
 emailPurgeButton.addEventListener("click", () => runTool("email-purge"));
+graphSignInButton.addEventListener("click", signInGraph);
+graphSignOutButton.addEventListener("click", signOutGraph);
+graphCollectButton.addEventListener("click", collectGraphDiagnostics);
 
 loadClassicSample.addEventListener("click", async () => {
   await loadSample("/samples/classic-modern-toggle.json");
@@ -85,6 +98,10 @@ exportMarkdown.addEventListener("click", () => {
   link.click();
   URL.revokeObjectURL(url);
 });
+
+void finishGraphRedirect();
+loadGraphConfig();
+renderGraphSession();
 
 async function loadFile(file) {
   const text = await file.text();
@@ -151,7 +168,7 @@ async function runTool(tool) {
   }
 
   if (isDangerous) {
-    const required = tool === "purview-purge" ? mailbox : "APPLY";
+    const required = tool === "retention-policy" ? "APPLY" : mailbox;
     if (toolConfirm.value.trim() !== required) {
       setToolOutput(`Confirmation required. Type ${required} in the Confirm box.`, true);
       return;
@@ -292,6 +309,376 @@ function setToolBusy(isBusy) {
   for (const button of [purviewPreviewButton, emailPreviewButton, graphPreviewButton, retentionButton, purviewPurgeButton, emailPurgeButton]) {
     button.disabled = isBusy;
   }
+}
+
+async function signInGraph() {
+  const tenantId = graphTenantId.value.trim() || "common";
+  const clientId = graphClientId.value.trim();
+
+  if (!clientId) {
+    setGraphOutput("Enter the Entra app client ID first.", true);
+    return;
+  }
+
+  saveGraphConfig();
+  const verifier = createRandomString(64);
+  const challenge = await createPkceChallenge(verifier);
+  const state = createRandomString(32);
+  const redirectUri = getGraphRedirectUri();
+  sessionStorage.setItem("outlookTsGraphAuth", JSON.stringify({ tenantId, clientId, verifier, state, redirectUri }));
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    response_type: "code",
+    redirect_uri: redirectUri,
+    response_mode: "query",
+    scope: graphScopes.join(" "),
+    state,
+    code_challenge: challenge,
+    code_challenge_method: "S256",
+    prompt: "select_account"
+  });
+
+  window.location.assign(`https://login.microsoftonline.com/${encodeURIComponent(tenantId)}/oauth2/v2.0/authorize?${params}`);
+}
+
+async function finishGraphRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+  if (!code) {
+    return;
+  }
+
+  const pending = readJsonSession("outlookTsGraphAuth");
+  if (!pending || params.get("state") !== pending.state) {
+    setGraphOutput("Graph sign-in state did not match. Try signing in again.", true);
+    return;
+  }
+
+  try {
+    const body = new URLSearchParams({
+      client_id: pending.clientId,
+      grant_type: "authorization_code",
+      code,
+      redirect_uri: pending.redirectUri,
+      code_verifier: pending.verifier,
+      scope: graphScopes.join(" ")
+    });
+
+    const response = await fetch(`https://login.microsoftonline.com/${encodeURIComponent(pending.tenantId)}/oauth2/v2.0/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body
+    });
+    const token = await response.json();
+    if (!response.ok) {
+      throw new Error(token.error_description ?? token.error ?? "Token exchange failed.");
+    }
+
+    sessionStorage.setItem("outlookTsGraphToken", JSON.stringify({
+      accessToken: token.access_token,
+      expiresAt: Date.now() + Number(token.expires_in ?? 3600) * 1000,
+      tenantId: pending.tenantId,
+      clientId: pending.clientId,
+      scopes: graphScopes
+    }));
+    sessionStorage.removeItem("outlookTsGraphAuth");
+    window.history.replaceState({}, document.title, window.location.pathname);
+    setGraphOutput("Signed in to Microsoft Graph.");
+  } catch (error) {
+    setGraphOutput(error instanceof Error ? error.message : String(error), true);
+  } finally {
+    renderGraphSession();
+  }
+}
+
+function signOutGraph() {
+  sessionStorage.removeItem("outlookTsGraphAuth");
+  sessionStorage.removeItem("outlookTsGraphToken");
+  renderGraphSession();
+  setGraphOutput("Signed out.");
+}
+
+async function collectGraphDiagnostics() {
+  const targetUser = graphUserId.value.trim();
+  const token = getGraphToken();
+  if (!token) {
+    setGraphOutput("Sign in to Microsoft Graph first.", true);
+    return;
+  }
+
+  if (!targetUser) {
+    setGraphOutput("Enter a target user first.", true);
+    return;
+  }
+
+  saveGraphConfig();
+  setGraphBusy(true);
+  setGraphOutput("Collecting Microsoft Graph diagnostics...");
+
+  try {
+    const daysBack = clampWholeNumber(Number(graphDaysBack.value || 14), 1, 365);
+    const daysForward = clampWholeNumber(Number(graphDaysForward.value || 120), 1, 365);
+    const diagnostics = await buildGraphDiagnostics(token.accessToken, targetUser, daysBack, daysForward);
+    jsonInput.value = JSON.stringify(diagnostics, null, 2);
+    setGraphOutput(`Collected Graph diagnostics for ${targetUser}.`);
+    await analyzeCurrentJson();
+  } catch (error) {
+    setGraphOutput(error instanceof Error ? error.message : String(error), true);
+  } finally {
+    setGraphBusy(false);
+  }
+}
+
+async function buildGraphDiagnostics(accessToken, targetUser, daysBack, daysForward) {
+  const errors = [];
+  const calendarErrors = [];
+  const target = encodeURIComponent(targetUser);
+  const collectedAt = new Date().toISOString();
+  const folderResult = await graphGetPaged(accessToken, `/users/${target}/mailFolders?$top=100&$select=displayName,totalItemCount,unreadItemCount,childFolderCount`, errors, "List mail folders");
+  const ruleResult = await graphGetPaged(accessToken, `/users/${target}/mailFolders/inbox/messageRules?$top=100`, errors, "List inbox rules");
+  const calendarResult = await graphGetPaged(accessToken, `/users/${target}/calendars?$top=100`, calendarErrors, "List calendars");
+  const settings = await graphGet(accessToken, `/users/${target}/mailboxSettings`, errors, "Read mailbox settings");
+  const signedIn = await graphGet(accessToken, `/me?$select=userPrincipalName,mail,displayName`, [], "Read signed-in user");
+
+  const syncStart = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000);
+  const syncEnd = new Date(Date.now() + daysForward * 24 * 60 * 60 * 1000);
+  const calendars = [];
+  const allEvents = [];
+
+  for (const calendar of calendarResult) {
+    const calendarId = calendar.id;
+    let events = [];
+    if (calendarId) {
+      events = await graphGetPaged(
+        accessToken,
+        `/users/${target}/calendars/${encodeURIComponent(calendarId)}/calendarView?startDateTime=${encodeURIComponent(syncStart.toISOString())}&endDateTime=${encodeURIComponent(syncEnd.toISOString())}&$top=100&$select=id,subject,start,end,type,isCancelled,isOrganizer,organizer,recurrence,lastModifiedDateTime`,
+        calendarErrors,
+        `Read calendar view for ${calendar.name ?? calendarId}`
+      );
+    }
+    allEvents.push(...events);
+    calendars.push({
+      id: calendar.id,
+      name: calendar.name,
+      canEdit: calendar.canEdit,
+      canShare: calendar.canShare,
+      canViewPrivateItems: calendar.canViewPrivateItems,
+      isDefaultCalendar: calendar.isDefaultCalendar,
+      ownerAddress: calendar.owner?.address,
+      eventCount: events.length,
+      recurringEventCount: events.filter((event) => event.type && event.type !== "singleInstance").length,
+      cancelledEventCount: events.filter((event) => event.isCancelled).length
+    });
+  }
+
+  const largestFolders = folderResult
+    .slice()
+    .sort((a, b) => (b.totalItemCount ?? 0) - (a.totalItemCount ?? 0))
+    .slice(0, 10)
+    .map((folder) => ({
+      displayName: folder.displayName,
+      totalItemCount: folder.totalItemCount,
+      unreadItemCount: folder.unreadItemCount,
+      childFolderCount: folder.childFolderCount,
+      isHidden: false
+    }));
+
+  const ruleSummaries = ruleResult.map(summarizeGraphRule);
+  const mailboxTimeZone = settings?.timeZone;
+  const defaultCalendar = calendars.find((calendar) => calendar.isDefaultCalendar) ?? calendars.find((calendar) => calendar.name === "Calendar") ?? null;
+
+  return {
+    collectedAt,
+    targetUserPrincipalName: targetUser,
+    graph: {
+      collectedAt,
+      collectorVersion: "0.2.0-browser",
+      errors,
+      signedInUserPrincipalName: signedIn?.userPrincipalName ?? signedIn?.mail,
+      targetUserPrincipalName: targetUser,
+      mailboxSettingsAvailable: Boolean(settings),
+      mailboxSettings: {
+        timeZone: settings?.timeZone ?? null,
+        dateFormat: settings?.dateFormat ?? null,
+        timeFormat: settings?.timeFormat ?? null,
+        workingHoursTimeZone: settings?.workingHours?.timeZone?.name ?? null,
+        automaticRepliesStatus: settings?.automaticRepliesSetting?.status ?? null
+      },
+      folderCount: folderResult.length,
+      hiddenFolderCount: 0,
+      largestFolders,
+      inboxRuleCount: ruleResult.length,
+      enabledInboxRuleCount: ruleResult.filter((rule) => rule.isEnabled).length,
+      forwardingRuleCount: ruleSummaries.filter((rule) => rule.hasForwardingAction).length,
+      suspiciousRules: ruleSummaries.filter((rule) => rule.hasForwardingAction || rule.hasDeleteOrMoveAction),
+      calendar: {
+        errors: calendarErrors,
+        calendarCount: calendarResult.length,
+        calendars,
+        defaultCalendar,
+        syncWindowStart: syncStart.toISOString(),
+        syncWindowEnd: syncEnd.toISOString(),
+        eventCount: allEvents.length,
+        recurringEventCount: allEvents.filter((event) => event.type && event.type !== "singleInstance").length,
+        cancelledEventCount: allEvents.filter((event) => event.isCancelled).length,
+        exceptionEventCount: allEvents.filter((event) => event.type === "exception").length,
+        eventTimeZoneMismatchCount: mailboxTimeZone ? allEvents.filter((event) => event.start?.timeZone && event.start.timeZone !== mailboxTimeZone).length : 0
+      }
+    }
+  };
+}
+
+function summarizeGraphRule(rule) {
+  const actions = rule.actions ?? {};
+  const forwardTo = (actions.forwardTo ?? []).map((recipient) => recipient.emailAddress?.address ?? recipient.emailAddress?.name).filter(Boolean);
+  const redirectTo = (actions.redirectTo ?? []).map((recipient) => recipient.emailAddress?.address ?? recipient.emailAddress?.name).filter(Boolean);
+  return {
+    displayName: rule.displayName,
+    isEnabled: rule.isEnabled,
+    sequence: rule.sequence,
+    hasForwardingAction: forwardTo.length > 0 || redirectTo.length > 0,
+    hasDeleteOrMoveAction: Boolean(actions.delete || actions.moveToFolder),
+    forwardTo,
+    redirectTo,
+    moveToFolder: actions.moveToFolder ?? null
+  };
+}
+
+async function graphGet(accessToken, path, errors, label) {
+  try {
+    const response = await fetch(`https://graph.microsoft.com${path}`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error?.message ?? response.statusText);
+    }
+    return result;
+  } catch (error) {
+    errors.push(`${label} failed: ${error instanceof Error ? error.message : String(error)}`);
+    return null;
+  }
+}
+
+async function graphGetPaged(accessToken, path, errors, label) {
+  const items = [];
+  let next = `https://graph.microsoft.com${path}`;
+  try {
+    while (next) {
+      const response = await fetch(next, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error?.message ?? response.statusText);
+      }
+      items.push(...(result.value ?? []));
+      next = result["@odata.nextLink"] ?? "";
+    }
+  } catch (error) {
+    errors.push(`${label} failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  return items;
+}
+
+function getGraphToken() {
+  const token = readJsonSession("outlookTsGraphToken");
+  if (!token?.accessToken || Number(token.expiresAt ?? 0) <= Date.now() + 60_000) {
+    return null;
+  }
+  return token;
+}
+
+function loadGraphConfig() {
+  const config = readJsonLocal("outlookTsGraphConfig");
+  if (!config) {
+    return;
+  }
+  graphTenantId.value = config.tenantId ?? "common";
+  graphClientId.value = config.clientId ?? "";
+  graphUserId.value = config.userId ?? "";
+  graphDaysBack.value = config.daysBack ?? "14";
+  graphDaysForward.value = config.daysForward ?? "120";
+}
+
+function saveGraphConfig() {
+  localStorage.setItem("outlookTsGraphConfig", JSON.stringify({
+    tenantId: graphTenantId.value.trim() || "common",
+    clientId: graphClientId.value.trim(),
+    userId: graphUserId.value.trim(),
+    daysBack: graphDaysBack.value,
+    daysForward: graphDaysForward.value
+  }));
+}
+
+function renderGraphSession() {
+  const token = getGraphToken();
+  graphSignInButton.disabled = Boolean(token);
+  graphSignOutButton.disabled = !token;
+  graphCollectButton.disabled = !token;
+  if (token) {
+    setGraphOutput(`Signed in. Token expires at ${new Date(token.expiresAt).toLocaleString()}.`);
+  }
+}
+
+function setGraphOutput(message, isError = false) {
+  graphOutput.textContent = message;
+  graphOutput.dataset.error = isError ? "true" : "false";
+}
+
+function setGraphBusy(isBusy) {
+  graphCollectButton.disabled = isBusy || !getGraphToken();
+  graphSignInButton.disabled = isBusy || Boolean(getGraphToken());
+  graphSignOutButton.disabled = isBusy || !getGraphToken();
+}
+
+function getGraphRedirectUri() {
+  return `${window.location.origin}${window.location.pathname}`;
+}
+
+function clampWholeNumber(value, min, max) {
+  if (!Number.isFinite(value)) {
+    return min;
+  }
+  return Math.min(max, Math.max(min, Math.trunc(value)));
+}
+
+function readJsonSession(key) {
+  try {
+    return JSON.parse(sessionStorage.getItem(key) ?? "null");
+  } catch {
+    return null;
+  }
+}
+
+function readJsonLocal(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key) ?? "null");
+  } catch {
+    return null;
+  }
+}
+
+function createRandomString(length) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join("");
+}
+
+async function createPkceChallenge(verifier) {
+  const data = new TextEncoder().encode(verifier);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return base64UrlEncode(new Uint8Array(digest));
+}
+
+function base64UrlEncode(bytes) {
+  let binary = "";
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
 }
 
 function escapeHtml(value) {

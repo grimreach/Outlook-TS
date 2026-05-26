@@ -104,6 +104,46 @@
             <pre id="toolOutput" class="toolOutput">No tool run yet.</pre>
           </section>
 
+          <section class="toolPanel" aria-label="Microsoft Graph diagnostics">
+            <div class="toolHeader">
+              <div>
+                <h2>Graph Diagnostics</h2>
+                <p>Read-only mailbox and calendar checks through an Entra app.</p>
+              </div>
+              <button id="graphSignInButton" type="button">Sign In</button>
+            </div>
+
+            <div class="graphGrid">
+              <label>
+                <span>Tenant ID</span>
+                <input id="graphTenantId" type="text" placeholder="common or tenant GUID" value="common" />
+              </label>
+              <label>
+                <span>Client ID</span>
+                <input id="graphClientId" type="text" placeholder="Application client ID" />
+              </label>
+              <label>
+                <span>Target user</span>
+                <input id="graphUserId" type="email" placeholder="user@contoso.com" />
+              </label>
+              <label>
+                <span>Days back</span>
+                <input id="graphDaysBack" type="number" min="1" max="365" value="14" />
+              </label>
+              <label>
+                <span>Days forward</span>
+                <input id="graphDaysForward" type="number" min="1" max="365" value="120" />
+              </label>
+            </div>
+
+            <div class="toolActions">
+              <button id="graphCollectButton" type="button">Collect Graph</button>
+              <button id="graphSignOutButton" type="button">Sign Out</button>
+            </div>
+
+            <pre id="graphOutput" class="toolOutput">Not signed in.</pre>
+          </section>
+
           <div class="summaryStrip">
             <div class="score critical">
               <span>Critical</span>
